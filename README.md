@@ -1,17 +1,22 @@
 # movieAgent
-Local Streamlit agent: spreadsheet-managed prompts → Ollama/ComfyUI/framepack video → auto-post to SNS
 
-## Setup
+スプレッドシートで管理したプロンプトを基に、ローカル環境で動画を生成し、SNS へ自動投稿する Streamlit アプリです。
+
+## 導入方法
 
 ```bash
-python -m venv .venv && source .venv/bin/activate
+python -m venv .venv
+# Windows
+.venv\\Scripts\\activate
+# macOS/Linux
+source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-## Run
+## UI の起動方法
 
 ```bash
 streamlit run app.py
 ```
 
-Access the UI in your browser at [http://localhost:8501](http://localhost:8501).
+実行後、ブラウザで [http://localhost:8501](http://localhost:8501) を開くと UI が表示されます。
