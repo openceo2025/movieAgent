@@ -1,6 +1,10 @@
 import streamlit as st
 import pandas as pd
-from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode
+
+try:
+    from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode
+except ModuleNotFoundError:
+    AgGrid = GridOptionsBuilder = GridUpdateMode = None
 
 CSV_FILE = "videos.csv"
 
@@ -38,6 +42,11 @@ st.title("Streamlit Video Agent")
 data = load_data(CSV_FILE)
 
 st.write("### Video Spreadsheet")
+
+if AgGrid is None:
+    st.error("Required package 'streamlit-aggrid' is not installed.\n"
+             "Please run `pip install streamlit-aggrid` and restart the app.")
+    st.stop()
 
 gb = GridOptionsBuilder.from_dataframe(data)
 gb.configure_default_column(editable=True)

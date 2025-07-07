@@ -20,3 +20,11 @@ streamlit run app.py
 ```
 
 実行後、ブラウザで [http://localhost:8501](http://localhost:8501) を開くと UI が表示されます。
+
+### トラブルシューティング
+
+`ModuleNotFoundError: No module named 'st_aggrid'` が表示された場合は、依存パッケージが不足しています。以下のコマンドで追加インストールしてから再度起動してください。
+
+```bash
+pip install streamlit-aggrid
+```
