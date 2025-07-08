@@ -1,2 +1,2 @@
-title,synopsis,llm_model,story_prompt,bgm_prompt,taste_prompt,character_voice,status,needs_approve
-Sample Video,Sample synopsis,phi3:mini,Sample story prompt,lofi science,flat comic,cheerful female,sheet,Y
+title,synopsis,llm_model,temperature,max_tokens,top_p,story_prompt,bgm_prompt,taste_prompt,character_voice,status,needs_approve
+Sample Video,Sample synopsis,phi3:mini,0.7,200,0.95,Sample story prompt,lofi science,flat comic,cheerful female,sheet,Y

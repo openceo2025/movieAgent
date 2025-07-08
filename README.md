@@ -23,4 +23,6 @@ streamlit run app.py
 
 
 動画リストは **Streamlit Data Editor** を利用しており、`num_rows="dynamic"`
-を指定することで、表から直接行を追加・削除できます。
+を指定することで、表から直接行を追加・削除できます。モデルの選択に加え、
+`temperature`、`max_tokens`、`top_p` といった生成パラメータも列として編集
+可能です。

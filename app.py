@@ -10,6 +10,9 @@ def load_data(path: str) -> pd.DataFrame:
         "title",
         "synopsis",
         "llm_model",
+        "temperature",
+        "max_tokens",
+        "top_p",
         "story_prompt",
         "bgm_prompt",
         "taste_prompt",
@@ -22,12 +25,21 @@ def load_data(path: str) -> pd.DataFrame:
     except FileNotFoundError:
         df = pd.DataFrame(columns=columns)
         df["llm_model"] = "phi3:mini"
+        df["temperature"] = 0.7
+        df["max_tokens"] = 200
+        df["top_p"] = 0.95
     else:
         missing_cols = [c for c in columns if c not in df.columns]
         for c in missing_cols:
             df[c] = ""
         if "llm_model" in missing_cols:
             df["llm_model"] = "phi3:mini"
+        if "temperature" in missing_cols:
+            df["temperature"] = 0.7
+        if "max_tokens" in missing_cols:
+            df["max_tokens"] = 200
+        if "top_p" in missing_cols:
+            df["top_p"] = 0.95
         df = df[columns]
     return df
 
@@ -58,11 +70,24 @@ def list_ollama_models() -> list[str]:
     return models or ["phi3:mini"]
 
 
-def generate_story_prompt(synopsis: str, model: str) -> str:
+def generate_story_prompt(
+    synopsis: str,
+    model: str,
+    temperature: float,
+    max_tokens: int,
+    top_p: float,
+) -> str:
     prompt = f"Generate a short story based on this synopsis:\n{synopsis}\n"
+    cmd = ["ollama", "run", model]
+    cmd += [
+        "--options",
+        f"temperature={temperature}",
+        f"num_predict={max_tokens}",
+        f"top_p={top_p}",
+    ]
     try:
         result = subprocess.run(
-            ["ollama", "run", model],
+            cmd,
             input=prompt,
             capture_output=True,
             text=True,
@@ -92,7 +117,26 @@ edited_df = st.data_editor(
             "Model",
             options=st.session_state.models,
             default="phi3:mini",
-        )
+        ),
+        "temperature": st.column_config.NumberColumn(
+            "Temp",
+            format="%.2f",
+            step=0.05,
+            min_value=0.0,
+            max_value=1.0,
+        ),
+        "max_tokens": st.column_config.NumberColumn(
+            "Max Tokens",
+            min_value=1,
+            step=1,
+        ),
+        "top_p": st.column_config.NumberColumn(
+            "Top-p",
+            format="%.2f",
+            step=0.05,
+            min_value=0.0,
+            max_value=1.0,
+        ),
     },
     num_rows="dynamic",
     hide_index=True,
@@ -106,8 +150,13 @@ if st.button("Generate story prompts"):
     for idx, row in df.iterrows():
         synopsis = row.get("synopsis", "")
         model = row.get("llm_model", "phi3:mini")
+        temperature = float(row.get("temperature", 0.7) or 0.7)
+        max_tokens = int(row.get("max_tokens", 200) or 200)
+        top_p = float(row.get("top_p", 0.95) or 0.95)
         if synopsis:
-            df.at[idx, "story_prompt"] = generate_story_prompt(synopsis, model)
+            df.at[idx, "story_prompt"] = generate_story_prompt(
+                synopsis, model, temperature, max_tokens, top_p
+            )
     st.session_state.video_df = df
 
 if st.button("Save changes"):
