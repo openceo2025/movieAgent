@@ -13,7 +13,7 @@
 
 | レイヤ          | 役割 | 使用技術 |
 |-----------------|------|----------|
-| **UI**          | セル編集／進捗監視／承認フラグ | Streamlit + st-aggrid |
+| **UI**          | セル編集／進捗監視／承認フラグ | Streamlit + Data Editor |
 | **データ管理**  | 1 行＝1 本の動画定義 | Google Sheets or local CSV (切替可) |
 | **生成エンジン**| 画像・音声・動画 | Ollama (LLM), ComfyUI (画像), framepack (動画補間) |
 | **パイプライン**| ステップ実行・依存管理 | Python asyncio + TaskQueue |

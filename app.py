@@ -1,11 +1,6 @@
 import streamlit as st
 import pandas as pd
 
-try:
-    from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode
-except ModuleNotFoundError:
-    AgGrid = GridOptionsBuilder = GridUpdateMode = None
-
 CSV_FILE = "videos.csv"
 
 
@@ -43,24 +38,14 @@ data = load_data(CSV_FILE)
 
 st.write("### Video Spreadsheet")
 
-if AgGrid is None:
-    st.error("Required package 'streamlit-aggrid' is not installed.\n"
-             "Please run `pip install streamlit-aggrid` and restart the app.")
-    st.stop()
-
-gb = GridOptionsBuilder.from_dataframe(data)
-gb.configure_default_column(editable=True)
-options = gb.build()
-
-grid_return = AgGrid(
+edited_df = st.data_editor(
     data,
-    gridOptions=options,
-    update_mode=GridUpdateMode.VALUE_CHANGED,
-    fit_columns_on_grid_load=True,
+    num_rows="dynamic",
+    hide_index=True,
+    use_container_width=True,
+    key="video_editor",
 )
 
-updated_df = grid_return["data"]
-
 if st.button("Save changes"):
-    save_data(updated_df, CSV_FILE)
+    save_data(edited_df, CSV_FILE)
     st.success("Saved to CSV")
