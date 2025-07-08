@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import subprocess
+import requests
 
 CSV_FILE = "videos.csv"
 
@@ -84,28 +85,24 @@ def generate_story_prompt(
     top_p: float,
 ) -> str:
     prompt = f"Generate a short story based on this synopsis:\n{synopsis}\n"
-    cmd = ["ollama", "run", model]
-    cmd += [
-        "--options",
-        f"temperature={temperature}",
-        f"num_predict={max_tokens}",
-        f"top_p={top_p}",
-    ]
+    url = "http://localhost:11434/api/generate"
+    payload = {
+        "model": model,
+        "prompt": prompt,
+        "temperature": temperature,
+        "num_predict": max_tokens,
+        "top_p": top_p,
+        "stream": False,
+    }
     try:
-        result = subprocess.run(
-            cmd,
-            input=prompt,
-            capture_output=True,
-            text=True,
-            encoding="utf-8",
-            errors="replace",
-            check=True,
-        )
-        return result.stdout.strip()
-    except FileNotFoundError:
-        st.error("Ollama command not found. Is Ollama installed?")
-    except subprocess.CalledProcessError as e:
-        st.error(f"Ollama error: {e.stderr or e}")
+        res = requests.post(url, json=payload, timeout=60)
+        res.raise_for_status()
+        data = res.json()
+        return data.get("response", "").strip()
+    except requests.exceptions.RequestException as e:
+        st.error(f"Ollama API error: {e}")
+    except ValueError as e:
+        st.error(f"Invalid response from Ollama: {e}")
     except Exception as e:
         st.error(f"Error: {e}")
     return None
