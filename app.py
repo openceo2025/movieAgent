@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import streamlit.components.v1 as components
 
 CSV_FILE = "videos.csv"
 
@@ -46,6 +47,41 @@ edited_df = st.data_editor(
     key="video_editor",
 )
 
-if st.button("Save changes"):
+if "last_saved_df" not in st.session_state:
+    st.session_state["last_saved_df"] = data.copy()
+
+unsaved = not edited_df.equals(st.session_state["last_saved_df"])
+st.session_state["unsaved_changes"] = unsaved
+
+if st.button("Save changes", key="save_button"):
     save_data(edited_df, CSV_FILE)
     st.success("Saved to CSV")
+    st.session_state["last_saved_df"] = edited_df.copy()
+    st.session_state["unsaved_changes"] = False
+
+components.html(
+    f"""
+    <script>
+    (function() {{
+        var unsaved = {str(st.session_state["unsaved_changes"]).lower()};
+        window.unsavedChanges = unsaved;
+        window.addEventListener('beforeunload', function(e) {{
+            if (window.unsavedChanges) {{
+                var save = confirm('変更が保存されていません。保存しますか?');
+                if (save) {{
+                    const btns = window.parent.document.querySelectorAll('button');
+                    for (const b of btns) {{
+                        if (b.innerText.trim() === 'Save changes') {{
+                            b.click();
+                            break;
+                        }}
+                    }}
+                }}
+            }}
+        }});
+    }})();
+    </script>
+    """,
+    height=0,
+)
+
