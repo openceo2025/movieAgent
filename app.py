@@ -14,6 +14,7 @@ DEFAULT_TOP_P = 0.95
 
 def load_data(path: str) -> pd.DataFrame:
     columns = [
+        "selected",
         "title",
         "synopsis",
         "llm_model",
@@ -31,6 +32,7 @@ def load_data(path: str) -> pd.DataFrame:
         df = pd.read_csv(path)
     except FileNotFoundError:
         df = pd.DataFrame(columns=columns)
+        df["selected"] = False
         df["llm_model"] = DEFAULT_MODEL
         df["temperature"] = DEFAULT_TEMPERATURE
         df["max_tokens"] = DEFAULT_MAX_TOKENS
@@ -38,7 +40,10 @@ def load_data(path: str) -> pd.DataFrame:
     else:
         missing_cols = [c for c in columns if c not in df.columns]
         for c in missing_cols:
-            df[c] = ""
+            if c == "selected":
+                df[c] = False
+            else:
+                df[c] = ""
         if "llm_model" in missing_cols:
             df["llm_model"] = DEFAULT_MODEL
         if "temperature" in missing_cols:
@@ -48,11 +53,13 @@ def load_data(path: str) -> pd.DataFrame:
         if "top_p" in missing_cols:
             df["top_p"] = DEFAULT_TOP_P
         df = df[columns]
+        df["selected"] = df["selected"].fillna(False).astype(bool)
     return df
 
 
 def save_data(df: pd.DataFrame, path: str) -> None:
-    df.to_csv(path, index=False)
+    df_copy = df.drop(columns=["selected"], errors="ignore")
+    df_copy.to_csv(path, index=False)
 
 
 def list_ollama_models() -> list[str]:
@@ -121,6 +128,7 @@ st.write("### Video Spreadsheet")
 edited_df = st.data_editor(
     st.session_state.video_df,
     column_config={
+        "selected": st.column_config.CheckboxColumn("Select"),
         "llm_model": st.column_config.SelectboxColumn(
             "Model",
             options=st.session_state.models,
@@ -153,9 +161,12 @@ edited_df = st.data_editor(
 )
 st.session_state.video_df = edited_df
 
-if st.button("Generate story prompts"):
+selected_rows = st.session_state.video_df["selected"] == True
+generate_disabled = not selected_rows.any()
+
+if st.button("Generate story prompts", disabled=generate_disabled):
     df = st.session_state.video_df.copy()
-    for idx, row in df.iterrows():
+    for idx, row in df[selected_rows].iterrows():
         synopsis = row.get("synopsis", "")
         model = row.get("llm_model", DEFAULT_MODEL)
         if pd.isna(model) or model == "":
