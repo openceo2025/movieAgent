@@ -27,3 +27,6 @@ streamlit run app.py
 `temperature`、`max_tokens`、`top_p` といった生成パラメータも列として編集
 可能です。
 デフォルト値は `temperature=0.7`、`max_tokens=4096`、`top_p=0.95` です。
+
+"Generate story prompts" ボタンを押すと、選択された行のプロンプト生成後に
+CSV へ自動保存し、ページをリフレッシュして結果を即座に反映します。
