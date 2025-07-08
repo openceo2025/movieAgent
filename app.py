@@ -194,7 +194,8 @@ if st.button("Generate story prompts", disabled=generate_disabled):
                 df.at[idx, "story_prompt"] = prompt
     st.session_state.video_df = df
     save_data(df, CSV_FILE)
-    st.experimental_rerun()
+    # Refresh the app to show updated prompts immediately
+    st.rerun()
 
 if st.button("Save changes"):
     save_data(st.session_state.video_df, CSV_FILE)
