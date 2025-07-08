@@ -71,17 +71,19 @@ st.set_page_config(page_title="Video Agent", layout="wide")
 
 st.title("Streamlit Video Agent")
 
-data = load_data(CSV_FILE)
-models = list_ollama_models()
+if "video_df" not in st.session_state:
+    st.session_state.video_df = load_data(CSV_FILE)
+if "models" not in st.session_state:
+    st.session_state.models = list_ollama_models()
 
 st.write("### Video Spreadsheet")
 
 edited_df = st.data_editor(
-    data,
+    st.session_state.video_df,
     column_config={
         "llm_model": st.column_config.SelectboxColumn(
             "Model",
-            options=models,
+            options=st.session_state.models,
             default="phi3:mini",
         )
     },
@@ -90,17 +92,17 @@ edited_df = st.data_editor(
     use_container_width=True,
     key="video_editor",
 )
+st.session_state.video_df = edited_df
 
 if st.button("Generate story prompts"):
-    df = edited_df.copy()
+    df = st.session_state.video_df.copy()
     for idx, row in df.iterrows():
         synopsis = row.get("synopsis", "")
         model = row.get("llm_model", "phi3:mini")
         if synopsis:
             df.at[idx, "story_prompt"] = generate_story_prompt(synopsis, model)
-    edited_df = df
-    st.session_state["video_editor"] = edited_df
+    st.session_state.video_df = df
 
 if st.button("Save changes"):
-    save_data(edited_df, CSV_FILE)
+    save_data(st.session_state.video_df, CSV_FILE)
     st.success("Saved to CSV")
