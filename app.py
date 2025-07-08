@@ -4,6 +4,12 @@ import subprocess
 
 CSV_FILE = "videos.csv"
 
+# Default generation parameters
+DEFAULT_MODEL = "phi3:mini"
+DEFAULT_TEMPERATURE = 0.7
+DEFAULT_MAX_TOKENS = 4098
+DEFAULT_TOP_P = 0.95
+
 
 def load_data(path: str) -> pd.DataFrame:
     columns = [
@@ -24,22 +30,22 @@ def load_data(path: str) -> pd.DataFrame:
         df = pd.read_csv(path)
     except FileNotFoundError:
         df = pd.DataFrame(columns=columns)
-        df["llm_model"] = "phi3:mini"
-        df["temperature"] = 0.7
-        df["max_tokens"] = 200
-        df["top_p"] = 0.95
+        df["llm_model"] = DEFAULT_MODEL
+        df["temperature"] = DEFAULT_TEMPERATURE
+        df["max_tokens"] = DEFAULT_MAX_TOKENS
+        df["top_p"] = DEFAULT_TOP_P
     else:
         missing_cols = [c for c in columns if c not in df.columns]
         for c in missing_cols:
             df[c] = ""
         if "llm_model" in missing_cols:
-            df["llm_model"] = "phi3:mini"
+            df["llm_model"] = DEFAULT_MODEL
         if "temperature" in missing_cols:
-            df["temperature"] = 0.7
+            df["temperature"] = DEFAULT_TEMPERATURE
         if "max_tokens" in missing_cols:
-            df["max_tokens"] = 200
+            df["max_tokens"] = DEFAULT_MAX_TOKENS
         if "top_p" in missing_cols:
-            df["top_p"] = 0.95
+            df["top_p"] = DEFAULT_TOP_P
         df = df[columns]
     return df
 
@@ -149,10 +155,24 @@ if st.button("Generate story prompts"):
     df = st.session_state.video_df.copy()
     for idx, row in df.iterrows():
         synopsis = row.get("synopsis", "")
-        model = row.get("llm_model", "phi3:mini")
-        temperature = float(row.get("temperature", 0.7) or 0.7)
-        max_tokens = int(row.get("max_tokens", 200) or 200)
-        top_p = float(row.get("top_p", 0.95) or 0.95)
+        model = row.get("llm_model", DEFAULT_MODEL)
+        if pd.isna(model) or model == "":
+            model = DEFAULT_MODEL
+
+        temperature = row.get("temperature", DEFAULT_TEMPERATURE)
+        if pd.isna(temperature) or temperature == "":
+            temperature = DEFAULT_TEMPERATURE
+        temperature = float(temperature)
+
+        max_tokens = row.get("max_tokens", DEFAULT_MAX_TOKENS)
+        if pd.isna(max_tokens) or max_tokens == "":
+            max_tokens = DEFAULT_MAX_TOKENS
+        max_tokens = int(max_tokens)
+
+        top_p = row.get("top_p", DEFAULT_TOP_P)
+        if pd.isna(top_p) or top_p == "":
+            top_p = DEFAULT_TOP_P
+        top_p = float(top_p)
         if synopsis:
             df.at[idx, "story_prompt"] = generate_story_prompt(
                 synopsis, model, temperature, max_tokens, top_p
