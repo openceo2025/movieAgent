@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import streamlit.components.v1 as components
 
 CSV_FILE = "videos.csv"
 
@@ -46,6 +47,22 @@ edited_df = st.data_editor(
     key="video_editor",
 )
 
-if st.button("Save changes"):
+save_clicked = st.button("Save changes", key="save-btn")
+components.html(
+    """
+    <script>
+      document.addEventListener('keydown', function (e) {
+        if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+          e.preventDefault();
+          const btn = document.querySelector('button[data-baseweb="button"][data-testid="save-btn-button"]');
+          if (btn) { btn.click(); }
+        }
+      });
+    </script>
+    """,
+    height=0,
+)
+
+if save_clicked:
     save_data(edited_df, CSV_FILE)
     st.success("Saved to CSV")
