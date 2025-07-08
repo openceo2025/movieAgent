@@ -40,7 +40,12 @@ def list_ollama_models() -> list[str]:
     """Return available Ollama models."""
     try:
         result = subprocess.run(
-            ["ollama", "list"], capture_output=True, text=True, check=True
+            ["ollama", "list"],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            check=True,
         )
     except Exception:
         return ["phi3:mini"]
@@ -61,6 +66,8 @@ def generate_story_prompt(synopsis: str, model: str) -> str:
             input=prompt,
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             check=True,
         )
         return result.stdout.strip()
