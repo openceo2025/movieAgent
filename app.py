@@ -7,7 +7,7 @@ CSV_FILE = "videos.csv"
 # Default generation parameters
 DEFAULT_MODEL = "phi3:mini"
 DEFAULT_TEMPERATURE = 0.7
-DEFAULT_MAX_TOKENS = 4098
+DEFAULT_MAX_TOKENS = 4096
 DEFAULT_TOP_P = 0.95
 
 
@@ -102,8 +102,13 @@ def generate_story_prompt(
             check=True,
         )
         return result.stdout.strip()
+    except FileNotFoundError:
+        st.error("Ollama command not found. Is Ollama installed?")
+    except subprocess.CalledProcessError as e:
+        st.error(f"Ollama error: {e.stderr or e}")
     except Exception as e:
-        return f"Error: {e}"
+        st.error(f"Error: {e}")
+    return None
 
 st.set_page_config(page_title="Video Agent", layout="wide")
 
@@ -174,9 +179,11 @@ if st.button("Generate story prompts"):
             top_p = DEFAULT_TOP_P
         top_p = float(top_p)
         if synopsis:
-            df.at[idx, "story_prompt"] = generate_story_prompt(
+            prompt = generate_story_prompt(
                 synopsis, model, temperature, max_tokens, top_p
             )
+            if prompt is not None:
+                df.at[idx, "story_prompt"] = prompt
     st.session_state.video_df = df
 
 if st.button("Save changes"):

@@ -26,4 +26,4 @@ streamlit run app.py
 を指定することで、表から直接行を追加・削除できます。モデルの選択に加え、
 `temperature`、`max_tokens`、`top_p` といった生成パラメータも列として編集
 可能です。
-デフォルト値は `temperature=0.7`、`max_tokens=4098`、`top_p=0.95` です。
+デフォルト値は `temperature=0.7`、`max_tokens=4096`、`top_p=0.95` です。
