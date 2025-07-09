@@ -15,6 +15,7 @@ DEFAULT_TOP_P = 0.95
 def load_data(path: str) -> pd.DataFrame:
     columns = [
         "selected",
+        "id",
         "title",
         "synopsis",
         "llm_model",
@@ -33,6 +34,7 @@ def load_data(path: str) -> pd.DataFrame:
     except FileNotFoundError:
         df = pd.DataFrame(columns=columns)
         df["selected"] = False
+        df["id"] = ""
         df["llm_model"] = DEFAULT_MODEL
         df["temperature"] = DEFAULT_TEMPERATURE
         df["max_tokens"] = DEFAULT_MAX_TOKENS
@@ -42,6 +44,8 @@ def load_data(path: str) -> pd.DataFrame:
         for c in missing_cols:
             if c == "selected":
                 df[c] = False
+            elif c == "id":
+                df[c] = [f"{i+1:04d}" for i in range(len(df))]
             else:
                 df[c] = ""
         if "llm_model" in missing_cols:
@@ -54,6 +58,7 @@ def load_data(path: str) -> pd.DataFrame:
             df["top_p"] = DEFAULT_TOP_P
         df = df[columns]
         df["selected"] = df["selected"].fillna(False).astype(bool)
+        df["id"] = df["id"].astype(str)
     return df
 
 
@@ -141,6 +146,7 @@ edited_df = st.data_editor(
     st.session_state.video_df,
     column_config={
         "selected": st.column_config.CheckboxColumn("Select"),
+        "id": st.column_config.TextColumn("ID"),
         "llm_model": st.column_config.SelectboxColumn(
             "Model",
             options=st.session_state.models,
