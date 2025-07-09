@@ -21,6 +21,10 @@ DEFAULT_TEMPERATURE = 0.7
 DEFAULT_MAX_TOKENS = 4096
 DEFAULT_TOP_P = 0.95
 
+# ComfyUI API host/port
+COMFYUI_HOST = os.getenv("COMFYUI_HOST", "127.0.0.1")
+COMFYUI_PORT = os.getenv("COMFYUI_PORT", "8188")
+
 
 def load_data(path: str) -> pd.DataFrame:
     columns = [
@@ -29,6 +33,9 @@ def load_data(path: str) -> pd.DataFrame:
         "title",
         "synopsis",
         "llm_model",
+        "comfy_model",
+        "comfy_vae",
+        "comfy_lora",
         "temperature",
         "max_tokens",
         "top_p",
@@ -46,6 +53,9 @@ def load_data(path: str) -> pd.DataFrame:
         df["selected"] = False
         df["id"] = ""
         df["llm_model"] = DEFAULT_MODEL
+        df["comfy_model"] = ""
+        df["comfy_vae"] = ""
+        df["comfy_lora"] = ""
         df["temperature"] = DEFAULT_TEMPERATURE
         df["max_tokens"] = DEFAULT_MAX_TOKENS
         df["top_p"] = DEFAULT_TOP_P
@@ -60,6 +70,12 @@ def load_data(path: str) -> pd.DataFrame:
                 df[c] = ""
         if "llm_model" in missing_cols:
             df["llm_model"] = DEFAULT_MODEL
+        if "comfy_model" in missing_cols:
+            df["comfy_model"] = ""
+        if "comfy_vae" in missing_cols:
+            df["comfy_vae"] = ""
+        if "comfy_lora" in missing_cols:
+            df["comfy_lora"] = ""
         if "temperature" in missing_cols:
             df["temperature"] = DEFAULT_TEMPERATURE
         if "max_tokens" in missing_cols:
@@ -97,6 +113,35 @@ def list_ollama_models() -> list[str]:
         if parts:
             models.append(parts[0])
     return models or ["phi3:mini"]
+
+
+def list_comfy_models() -> tuple[list[str], list[str], list[str]]:
+    """Return (checkpoints, vae, loras) from ComfyUI."""
+    base = f"http://{COMFYUI_HOST}:{COMFYUI_PORT}"
+    try:
+        res = requests.get(f"{base}/models", timeout=5)
+        res.raise_for_status()
+        folders = res.json()
+    except Exception:
+        folders = []
+
+    def fetch(folder: str) -> list[str]:
+        if folder not in folders:
+            return []
+        try:
+            r = requests.get(f"{base}/models/{folder}", timeout=5)
+            r.raise_for_status()
+            data = r.json()
+            if isinstance(data, list):
+                return data
+        except Exception:
+            pass
+        return []
+
+    checkpoints = fetch("checkpoints")
+    vaes = fetch("vae")
+    loras = fetch("loras")
+    return checkpoints, vaes, loras
 
 
 def generate_story_prompt(
@@ -157,6 +202,26 @@ if "video_df" not in st.session_state:
     st.session_state.video_df = load_data(CSV_FILE)
 if "models" not in st.session_state:
     st.session_state.models = list_ollama_models()
+if "comfy_models" not in st.session_state:
+    (
+        st.session_state.comfy_models,
+        st.session_state.comfy_vaes,
+        st.session_state.comfy_loras,
+    ) = list_comfy_models()
+
+df = st.session_state.video_df
+for col, options in [
+    ("comfy_model", st.session_state.comfy_models),
+    ("comfy_vae", st.session_state.comfy_vaes),
+    ("comfy_lora", st.session_state.comfy_loras),
+]:
+    if col not in df.columns:
+        df[col] = options[0] if options else ""
+    else:
+        df[col] = df[col].fillna("")
+        if options and (df[col] == "").any():
+            df.loc[df[col] == "", col] = options[0]
+st.session_state.video_df = df
 
 st.write("### Video Spreadsheet")
 
@@ -169,6 +234,21 @@ edited_df = st.data_editor(
             "Model",
             options=st.session_state.models,
             default="phi3:mini",
+        ),
+        "comfy_model": st.column_config.SelectboxColumn(
+            "Comfy Model",
+            options=st.session_state.comfy_models,
+            default=st.session_state.comfy_models[0] if st.session_state.comfy_models else "",
+        ),
+        "comfy_vae": st.column_config.SelectboxColumn(
+            "VAE",
+            options=st.session_state.comfy_vaes,
+            default=st.session_state.comfy_vaes[0] if st.session_state.comfy_vaes else "",
+        ),
+        "comfy_lora": st.column_config.SelectboxColumn(
+            "LoRA",
+            options=st.session_state.comfy_loras,
+            default=st.session_state.comfy_loras[0] if st.session_state.comfy_loras else "",
         ),
         "temperature": st.column_config.NumberColumn(
             "Temp",
