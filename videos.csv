@@ -1,2 +1,2 @@
-id,title,synopsis,llm_model,temperature,max_tokens,top_p,story_prompt,bgm_prompt,taste_prompt,character_voice,status,needs_approve
-0042,Sample Video,Sample synopsis,phi3:mini,0.7,4096,0.95,Sample story prompt,lofi science,flat comic,cheerful female,sheet,Y
+id,title,synopsis,llm_model,checkpoint,comfy_vae,comfy_lora,temperature,max_tokens,top_p,story_prompt,bgm_prompt,taste_prompt,character_voice,status,needs_approve
+0042,Sample Video,Sample synopsis,phi3:mini,,,0.7,4096,0.95,Sample story prompt,lofi science,flat comic,cheerful female,sheet,Y

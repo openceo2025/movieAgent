@@ -5,6 +5,8 @@ import requests
 import argparse
 import sys
 import os
+import re
+from typing import Optional
 
 # Parse CLI arguments passed after `--` when running via Streamlit
 parser = argparse.ArgumentParser(add_help=False)
@@ -27,6 +29,12 @@ COMFYUI_HOST = os.getenv("COMFYUI_HOST", "127.0.0.1")
 COMFYUI_PORT = os.getenv("COMFYUI_PORT", "8188")
 
 
+def slugify(text: str) -> str:
+    text = text.lower().strip()
+    text = re.sub(r"[^a-z0-9]+", "_", text)
+    return text.strip("_") or "item"
+
+
 def load_data(path: str) -> pd.DataFrame:
     columns = [
         "selected",
@@ -34,7 +42,7 @@ def load_data(path: str) -> pd.DataFrame:
         "title",
         "synopsis",
         "llm_model",
-        "comfy_model",
+        "checkpoint",
         "comfy_vae",
         "comfy_lora",
         "temperature",
@@ -54,7 +62,7 @@ def load_data(path: str) -> pd.DataFrame:
         df["selected"] = False
         df["id"] = ""
         df["llm_model"] = DEFAULT_MODEL
-        df["comfy_model"] = ""
+        df["checkpoint"] = ""
         df["comfy_vae"] = ""
         df["comfy_lora"] = ""
         df["temperature"] = DEFAULT_TEMPERATURE
@@ -71,8 +79,8 @@ def load_data(path: str) -> pd.DataFrame:
                 df[c] = ""
         if "llm_model" in missing_cols:
             df["llm_model"] = DEFAULT_MODEL
-        if "comfy_model" in missing_cols:
-            df["comfy_model"] = ""
+        if "checkpoint" in missing_cols:
+            df["checkpoint"] = ""
         if "comfy_vae" in missing_cols:
             df["comfy_vae"] = ""
         if "comfy_lora" in missing_cols:
@@ -145,6 +153,32 @@ def list_comfy_models() -> tuple[list[str], list[str], list[str]]:
     return checkpoints, vaes, loras
 
 
+def generate_image(prompt: str, checkpoint: str, vae: str, debug: bool = False) -> Optional[bytes]:
+    """Generate image via ComfyUI."""
+    url = f"http://{COMFYUI_HOST}:{COMFYUI_PORT}/generate"
+    payload = {
+        "prompt": prompt,
+        "checkpoint": checkpoint,
+        "vae": vae,
+    }
+    if debug:
+        print("[DEBUG] ComfyUI request payload:", payload)
+    try:
+        res = requests.post(url, json=payload, timeout=120)
+        if debug:
+            print("[DEBUG] ComfyUI response status:", res.status_code)
+            print("[DEBUG] ComfyUI raw response:", res.text[:200])
+        res.raise_for_status()
+        if res.headers.get("content-type", "").startswith("image/"):
+            return res.content
+        return None
+    except requests.exceptions.RequestException as e:
+        st.error(f"ComfyUI API error: {e}")
+    except Exception as e:
+        st.error(f"Error: {e}")
+    return None
+
+
 def generate_story_prompt(
     synopsis: str,
     model: str,
@@ -212,7 +246,7 @@ if "comfy_models" not in st.session_state:
 
 df = st.session_state.video_df
 for col, options in [
-    ("comfy_model", st.session_state.comfy_models),
+    ("checkpoint", st.session_state.comfy_models),
     ("comfy_vae", st.session_state.comfy_vaes),
     ("comfy_lora", st.session_state.comfy_loras),
 ]:
@@ -236,8 +270,8 @@ edited_df = st.data_editor(
             options=st.session_state.models,
             default="phi3:mini",
         ),
-        "comfy_model": st.column_config.SelectboxColumn(
-            "Comfy Model",
+        "checkpoint": st.column_config.SelectboxColumn(
+            "Checkpoint",
             options=st.session_state.comfy_models,
             default=st.session_state.comfy_models[0] if st.session_state.comfy_models else "",
         ),
@@ -319,6 +353,28 @@ if st.button("Generate story prompts", disabled=generate_disabled):
     # Refresh the app to show updated prompts immediately
     # Mark that a rerun is triggered so we can notify the user after reload
     rerun_with_message("Page reloaded after generating prompts")
+
+if st.button("Generate images", disabled=generate_disabled):
+    df = st.session_state.video_df.copy()
+    for idx, row in df[selected_rows].iterrows():
+        prompt = row.get("story_prompt", "")
+        checkpoint = row.get("checkpoint", "")
+        vae = row.get("comfy_vae", "")
+        if not prompt:
+            st.warning(f"No story prompt for row {row.get('id', idx)}")
+            continue
+        img_bytes = generate_image(prompt, checkpoint, vae, debug=DEBUG_MODE)
+        title = row.get("title", "")
+        folder = os.path.join("vids", f"{row.get('id', idx)}_{slugify(title)}", "panels")
+        if img_bytes:
+            os.makedirs(folder, exist_ok=True)
+            out_path = os.path.join(folder, "image.png")
+            with open(out_path, "wb") as f:
+                f.write(img_bytes)
+            st.success(f"Image saved to {out_path}")
+        else:
+            st.error(f"Failed to generate image for row {row.get('id', idx)}")
+    rerun_with_message("Page reloaded after generating images")
 
 if st.button("Save changes"):
     save_data(st.session_state.video_df, CSV_FILE)
