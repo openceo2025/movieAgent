@@ -116,6 +116,10 @@ def generate_story_prompt(
 
 st.set_page_config(page_title="Video Agent", layout="wide")
 
+# Display notice if the page was refreshed by st.rerun()
+if st.session_state.pop("just_rerun", False):
+    st.info("Page reloaded after generating prompts")
+
 st.title("Streamlit Video Agent")
 
 if "video_df" not in st.session_state:
@@ -195,6 +199,8 @@ if st.button("Generate story prompts", disabled=generate_disabled):
     st.session_state.video_df = df
     save_data(df, CSV_FILE)
     # Refresh the app to show updated prompts immediately
+    # Mark that a rerun is triggered so we can notify the user after reload
+    st.session_state["just_rerun"] = True
     st.rerun()
 
 if st.button("Save changes"):

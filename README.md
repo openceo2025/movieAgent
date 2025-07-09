@@ -30,3 +30,4 @@ streamlit run app.py
 
 "Generate story prompts" ボタンを押すと、選択された行のプロンプト生成後に
 CSV へ自動保存し、ページをリフレッシュして結果を即座に反映します。
+ページ再読み込み時には "Page reloaded after generating prompts" と表示されます。
