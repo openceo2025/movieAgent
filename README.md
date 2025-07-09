@@ -32,3 +32,17 @@ streamlit run app.py
 CSV へ自動保存し、ページをリフレッシュして結果を即座に反映します。
 アプリから `st.rerun()` が実行された際はリロード後にメッセージが表示され、
 "Page reloaded after generating prompts" などの文言で通知されます。
+
+## ComfyUI Path
+
+ComfyUI は本リポジトリとは別ディレクトリにインストールしてください。
+アプリケーションからは `COMFYUI_PATH` 環境変数で ComfyUI のルートパスを参照する想定です。
+
+```bash
+# 例
+export COMFYUI_PATH=/path/to/ComfyUI
+```
+
+現時点ではまだ自動連携処理は実装されていませんが、今後この環境変数を利用して
+ComfyUI を呼び出す予定です。
+
