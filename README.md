@@ -17,6 +17,8 @@ pip install -r requirements.txt
 
 ```bash
 streamlit run app.py
+# デバッグ表示を有効化する場合
+streamlit run app.py -- --debug
 ```
 
 実行後、ブラウザで [http://localhost:8501](http://localhost:8501) を開くと UI が表示されます。
