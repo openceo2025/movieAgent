@@ -4,6 +4,7 @@ import subprocess
 import requests
 import argparse
 import sys
+import os
 
 # Parse CLI arguments passed after `--` when running via Streamlit
 parser = argparse.ArgumentParser(add_help=False)
