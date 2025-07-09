@@ -2,6 +2,16 @@ import streamlit as st
 import pandas as pd
 import subprocess
 import requests
+import argparse
+import sys
+
+# Parse CLI arguments passed after `--` when running via Streamlit
+parser = argparse.ArgumentParser(add_help=False)
+parser.add_argument("--debug", action="store_true", help="Enable debug logging")
+args, _ = parser.parse_known_args()
+DEBUG_MODE = args.debug
+if DEBUG_MODE:
+    print("[DEBUG] Debug mode enabled")
 
 CSV_FILE = "videos.csv"
 
@@ -95,6 +105,7 @@ def generate_story_prompt(
     temperature: float,
     max_tokens: int,
     top_p: float,
+    debug: bool = False,
 ) -> str:
     prompt = f"Generate a short story based on this synopsis:\n{synopsis}\n"
     url = "http://localhost:11434/api/generate"
@@ -106,10 +117,17 @@ def generate_story_prompt(
         "top_p": top_p,
         "stream": False,
     }
+    if debug:
+        print("[DEBUG] Request payload:", payload)
     try:
         res = requests.post(url, json=payload, timeout=60)
+        if debug:
+            print("[DEBUG] Response status:", res.status_code)
+            print("[DEBUG] Raw response:", res.text)
         res.raise_for_status()
         data = res.json()
+        if debug:
+            print("[DEBUG] Parsed response:", data)
         return data.get("response", "").strip()
     except requests.exceptions.RequestException as e:
         st.error(f"Ollama API error: {e}")
@@ -206,7 +224,12 @@ if st.button("Generate story prompts", disabled=generate_disabled):
         top_p = float(top_p)
         if synopsis:
             prompt = generate_story_prompt(
-                synopsis, model, temperature, max_tokens, top_p
+                synopsis,
+                model,
+                temperature,
+                max_tokens,
+                top_p,
+                debug=DEBUG_MODE,
             )
             if prompt is not None:
                 df.at[idx, "story_prompt"] = prompt
