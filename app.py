@@ -6,6 +6,8 @@ import argparse
 import sys
 import os
 import re
+import json
+import base64
 from typing import Optional
 
 # Parse CLI arguments passed after `--` when running via Streamlit
@@ -27,6 +29,49 @@ DEFAULT_TOP_P = 0.95
 # ComfyUI API host/port
 COMFYUI_HOST = os.getenv("COMFYUI_HOST", "127.0.0.1")
 COMFYUI_PORT = os.getenv("COMFYUI_PORT", "8188")
+
+# Base workflow used for the ComfyUI /prompt API
+BASE_WORKFLOW = {
+    "3": {
+        "class_type": "KSampler",
+        "inputs": {
+            "cfg": 8,
+            "denoise": 1,
+            "latent_image": ["5", 0],
+            "model": ["4", 0],
+            "negative": ["7", 0],
+            "positive": ["6", 0],
+            "sampler_name": "euler",
+            "scheduler": "normal",
+            "seed": 8566257,
+            "steps": 20,
+        },
+    },
+    "4": {
+        "class_type": "CheckpointLoaderSimple",
+        "inputs": {"ckpt_name": "sdXL_v10VAEFix.safetensors"},
+    },
+    "5": {
+        "class_type": "EmptyLatentImage",
+        "inputs": {"batch_size": 1, "height": 512, "width": 512},
+    },
+    "6": {
+        "class_type": "CLIPTextEncode",
+        "inputs": {"clip": ["4", 1], "text": ""},
+    },
+    "7": {
+        "class_type": "CLIPTextEncode",
+        "inputs": {"clip": ["4", 1], "text": "bad hands"},
+    },
+    "8": {
+        "class_type": "VAEDecode",
+        "inputs": {"samples": ["3", 0], "vae": ["4", 2]},
+    },
+    "9": {
+        "class_type": "SaveImage",
+        "inputs": {"filename_prefix": "ComfyUI", "images": ["8", 0]},
+    },
+}
 
 
 def slugify(text: str) -> str:
@@ -154,24 +199,28 @@ def list_comfy_models() -> tuple[list[str], list[str], list[str]]:
 
 
 def generate_image(prompt: str, checkpoint: str, vae: str, debug: bool = False) -> Optional[bytes]:
-    """Generate image via ComfyUI."""
-    url = f"http://{COMFYUI_HOST}:{COMFYUI_PORT}/generate"
-    payload = {
-        "prompt": prompt,
-        "checkpoint": checkpoint,
-        "vae": vae,
-    }
+    """Generate image via ComfyUI /prompt API."""
+    url = f"http://{COMFYUI_HOST}:{COMFYUI_PORT}/prompt"
+
+    workflow = json.loads(json.dumps(BASE_WORKFLOW))
+    workflow["6"]["inputs"]["text"] = prompt
+    workflow["4"]["inputs"]["ckpt_name"] = checkpoint
+
+    payload = {"prompt": workflow}
+
     if debug:
         print("[DEBUG] ComfyUI request payload:", payload)
+
     try:
         res = requests.post(url, json=payload, timeout=120)
         if debug:
             print("[DEBUG] ComfyUI response status:", res.status_code)
             print("[DEBUG] ComfyUI raw response:", res.text[:200])
         res.raise_for_status()
-        if res.headers.get("content-type", "").startswith("image/"):
-            return res.content
-        return None
+        data = res.json()
+        images = data.get("images")
+        if images:
+            return base64.b64decode(images[0])
     except requests.exceptions.RequestException as e:
         st.error(f"ComfyUI API error: {e}")
     except Exception as e:
