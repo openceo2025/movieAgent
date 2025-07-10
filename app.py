@@ -237,7 +237,16 @@ def generate_image(prompt: str, checkpoint: str, vae: str, debug: bool = False) 
         try:
             r = requests.get(history_url, timeout=10)
             r.raise_for_status()
-            hist = r.json().get(prompt_id, {})
+            hist_resp = r.json()
+            if debug:
+                try:
+                    print(
+                        "[DEBUG] /history response:",
+                        json.dumps(hist_resp)[:200],
+                    )
+                except Exception as e:
+                    print("[DEBUG] error decoding history response:", e)
+            hist = hist_resp.get(prompt_id, {})
             outputs = hist.get("outputs", {})
             for node_data in outputs.values():
                 images = node_data.get("images")
