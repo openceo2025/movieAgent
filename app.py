@@ -8,6 +8,7 @@ import os
 import re
 import json
 import base64
+import time
 from typing import Optional
 
 # Parse CLI arguments passed after `--` when running via Streamlit
@@ -199,8 +200,9 @@ def list_comfy_models() -> tuple[list[str], list[str], list[str]]:
 
 
 def generate_image(prompt: str, checkpoint: str, vae: str, debug: bool = False) -> Optional[bytes]:
-    """Generate image via ComfyUI /prompt API."""
-    url = f"http://{COMFYUI_HOST}:{COMFYUI_PORT}/prompt"
+    """Generate image via ComfyUI using polling."""
+    base = f"http://{COMFYUI_HOST}:{COMFYUI_PORT}"
+    prompt_url = f"{base}/prompt"
 
     workflow = json.loads(json.dumps(BASE_WORKFLOW))
     workflow["6"]["inputs"]["text"] = prompt
@@ -212,19 +214,52 @@ def generate_image(prompt: str, checkpoint: str, vae: str, debug: bool = False) 
         print("[DEBUG] ComfyUI request payload:", payload)
 
     try:
-        res = requests.post(url, json=payload, timeout=120)
+        res = requests.post(prompt_url, json=payload, timeout=30)
         if debug:
-            print("[DEBUG] ComfyUI response status:", res.status_code)
-            print("[DEBUG] ComfyUI raw response:", res.text[:200])
+            print("[DEBUG] /prompt status:", res.status_code)
+            print("[DEBUG] /prompt raw response:", res.text[:200])
         res.raise_for_status()
         data = res.json()
-        images = data.get("images")
-        if images:
-            return base64.b64decode(images[0])
+        prompt_id = data.get("prompt_id")
+        if not prompt_id:
+            st.error("prompt_id not returned from ComfyUI")
+            return None
     except requests.exceptions.RequestException as e:
         st.error(f"ComfyUI API error: {e}")
+        return None
     except Exception as e:
         st.error(f"Error: {e}")
+        return None
+
+    history_url = f"{base}/history/{prompt_id}"
+    view_url = f"{base}/view"
+    for _ in range(60):
+        try:
+            r = requests.get(history_url, timeout=10)
+            r.raise_for_status()
+            hist = r.json().get(prompt_id, {})
+            outputs = hist.get("outputs", {})
+            for node_data in outputs.values():
+                images = node_data.get("images")
+                if images:
+                    img = images[0]
+                    params = {"filename": img.get("filename")}
+                    if img.get("subfolder"):
+                        params["subfolder"] = img.get("subfolder")
+                    if img.get("type"):
+                        params["type"] = img.get("type")
+                    resp = requests.get(view_url, params=params, timeout=10)
+                    resp.raise_for_status()
+                    return resp.content
+        except requests.exceptions.RequestException as e:
+            if debug:
+                print("[DEBUG] polling error:", e)
+        except Exception as e:
+            if debug:
+                print("[DEBUG] unexpected error:", e)
+        time.sleep(5)
+
+    st.error("Timed out waiting for ComfyUI output")
     return None
 
 
