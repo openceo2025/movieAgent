@@ -81,6 +81,17 @@ def slugify(text: str) -> str:
     return text.strip("_") or "item"
 
 
+def unique_path(path: str) -> str:
+    """Return a non-existing filepath by adding numeric suffixes."""
+    base, ext = os.path.splitext(path)
+    candidate = path
+    counter = 1
+    while os.path.exists(candidate):
+        candidate = f"{base}_{counter}{ext}"
+        counter += 1
+    return candidate
+
+
 def load_data(path: str) -> pd.DataFrame:
     columns = [
         "selected",
@@ -461,7 +472,7 @@ if st.button("Generate images", disabled=generate_disabled):
         folder = os.path.join("vids", f"{row.get('id', idx)}_{slugify(title)}", "panels")
         if img_bytes:
             os.makedirs(folder, exist_ok=True)
-            out_path = os.path.join(folder, "image.png")
+            out_path = unique_path(os.path.join(folder, "image.png"))
             with open(out_path, "wb") as f:
                 f.write(img_bytes)
             st.success(f"Image saved to {out_path}")
