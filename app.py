@@ -365,6 +365,11 @@ st.title("Streamlit Video Agent")
 
 if "video_df" not in st.session_state:
     st.session_state.video_df = load_data(CSV_FILE)
+    st.session_state.last_saved_df = st.session_state.video_df.copy()
+if "last_saved_df" not in st.session_state:
+    st.session_state.last_saved_df = st.session_state.video_df.copy()
+if "autosave" not in st.session_state:
+    st.session_state.autosave = False
 if "models" not in st.session_state:
     st.session_state.models = list_ollama_models()
 if "comfy_models" not in st.session_state:
@@ -441,6 +446,12 @@ edited_df = st.data_editor(
     key="video_editor",
 )
 st.session_state.video_df = assign_ids(edited_df)
+if st.session_state.autosave and not st.session_state.video_df.equals(
+    st.session_state.last_saved_df
+):
+    save_data(st.session_state.video_df, CSV_FILE)
+    st.session_state.last_saved_df = st.session_state.video_df.copy()
+    st.info("Auto-saved to CSV")
 
 selected_rows = st.session_state.video_df["selected"] == True
 generate_disabled = not selected_rows.any()
@@ -481,6 +492,7 @@ if st.button("Generate story prompts", disabled=generate_disabled):
     df = assign_ids(df)
     st.session_state.video_df = df
     save_data(df, CSV_FILE)
+    st.session_state.last_saved_df = df.copy()
     # Refresh the app to show updated prompts immediately
     # Mark that a rerun is triggered so we can notify the user after reload
     rerun_with_message("Page reloaded after generating prompts")
@@ -508,10 +520,18 @@ if st.button("Generate images", disabled=generate_disabled):
 
     st.session_state.video_df = df
     save_data(df, CSV_FILE)
+    st.session_state.last_saved_df = df.copy()
     rerun_with_message("Page reloaded after generating images")
 
-if st.button("Save changes"):
+save_col, auto_col = st.columns([1, 1])
+if auto_col.checkbox("Auto-save", value=st.session_state.autosave, key="autosave"):
+    st.session_state.autosave = True
+else:
+    st.session_state.autosave = False
+
+if save_col.button("Save CSV"):
     df = assign_ids(st.session_state.video_df.copy())
     st.session_state.video_df = df
     save_data(df, CSV_FILE)
+    st.session_state.last_saved_df = df.copy()
     st.success("Saved to CSV")
