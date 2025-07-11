@@ -29,7 +29,8 @@ streamlit run app.py -- --debug
 `temperature`、`max_tokens`、`top_p`、`seed` といった生成パラメータも列として
 編集可能です。
 デフォルト値は `temperature=0.7`、`max_tokens=4096`、`top_p=0.95`、`seed=1234`
-です。
+です。`seed` 欄を空欄にすると、画像生成時に毎回ランダムなシード値が送られ
+ます。
 
 "Generate story prompts" ボタンを押すと、選択された行のプロンプト生成後に
 CSV へ自動保存し、ページをリフレッシュして結果を即座に反映します。

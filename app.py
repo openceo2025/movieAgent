@@ -9,6 +9,7 @@ import re
 import json
 import base64
 import time
+import random
 from typing import Optional
 
 # Parse CLI arguments passed after `--` when running via Streamlit
@@ -523,10 +524,11 @@ if st.button("Generate images", disabled=generate_disabled):
         if not prompt:
             st.warning(f"No story prompt for row {row.get('id', idx)}")
             continue
-        seed_val = row.get("seed", DEFAULT_SEED)
-        if pd.isna(seed_val) or seed_val == "":
-            seed_val = DEFAULT_SEED
-        seed_val = int(seed_val)
+        seed_val = row.get("seed", "")
+        if pd.isna(seed_val) or str(seed_val).strip() == "":
+            seed_val = random.randint(0, 2**32 - 1)
+        else:
+            seed_val = int(seed_val)
         img_bytes = generate_image(prompt, checkpoint, vae, seed_val, debug=DEBUG_MODE)
         title = row.get("title", "")
         folder = os.path.join("vids", f"{row.get('id', idx)}_{slugify(title)}", "panels")
