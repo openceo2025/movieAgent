@@ -133,6 +133,7 @@ def load_data(path: str) -> pd.DataFrame:
         "max_tokens",
         "top_p",
         "seed",
+        "batch_count",
         "story_prompt",
         "bgm_prompt",
         "taste_prompt",
@@ -154,6 +155,7 @@ def load_data(path: str) -> pd.DataFrame:
         df["max_tokens"] = DEFAULT_MAX_TOKENS
         df["top_p"] = DEFAULT_TOP_P
         df["seed"] = DEFAULT_SEED
+        df["batch_count"] = 1
     else:
         missing_cols = [c for c in columns if c not in df.columns]
         for c in missing_cols:
@@ -179,6 +181,8 @@ def load_data(path: str) -> pd.DataFrame:
             df["top_p"] = DEFAULT_TOP_P
         if "seed" in missing_cols:
             df["seed"] = DEFAULT_SEED
+        if "batch_count" in missing_cols:
+            df["batch_count"] = 1
         df = df[columns]
         df["selected"] = df["selected"].fillna(False).astype(bool)
         df["id"] = df["id"].astype(str)
@@ -457,6 +461,11 @@ edited_df = st.data_editor(
             step=1,
             format="%d",
         ),
+        "batch_count": st.column_config.NumberColumn(
+            "Batch",
+            min_value=1,
+            step=1,
+        ),
     },
     num_rows="dynamic",
     hide_index=True,
@@ -529,17 +538,29 @@ if st.button("Generate images", disabled=generate_disabled):
             seed_val = random.randint(0, 2**32 - 1)
         else:
             seed_val = int(seed_val)
-        img_bytes = generate_image(prompt, checkpoint, vae, seed_val, debug=DEBUG_MODE)
+
+        batch_count = row.get("batch_count", 1)
+        if pd.isna(batch_count) or str(batch_count).strip() == "":
+            batch_count = 1
+        else:
+            batch_count = int(batch_count)
+
         title = row.get("title", "")
         folder = os.path.join("vids", f"{row.get('id', idx)}_{slugify(title)}", "panels")
-        if img_bytes:
-            os.makedirs(folder, exist_ok=True)
-            out_path = unique_path(os.path.join(folder, "image.png"))
-            with open(out_path, "wb") as f:
-                f.write(img_bytes)
-            st.success(f"Image saved to {out_path}")
-        else:
-            st.error(f"Failed to generate image for row {row.get('id', idx)}")
+
+        for b in range(batch_count):
+            current_seed = seed_val + b if batch_count > 1 else seed_val
+            img_bytes = generate_image(prompt, checkpoint, vae, current_seed, debug=DEBUG_MODE)
+            if img_bytes:
+                os.makedirs(folder, exist_ok=True)
+                out_path = unique_path(os.path.join(folder, "image.png"))
+                with open(out_path, "wb") as f:
+                    f.write(img_bytes)
+                st.success(f"Image saved to {out_path}")
+            else:
+                st.error(
+                    f"Failed to generate image for row {row.get('id', idx)} (batch {b+1})"
+                )
 
     st.session_state.video_df = df
     save_data(df, CSV_FILE)
