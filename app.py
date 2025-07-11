@@ -524,10 +524,7 @@ if st.button("Generate images", disabled=generate_disabled):
     rerun_with_message("Page reloaded after generating images")
 
 save_col, auto_col = st.columns([1, 1])
-if auto_col.checkbox("Auto-save", value=st.session_state.autosave, key="autosave"):
-    st.session_state.autosave = True
-else:
-    st.session_state.autosave = False
+auto_col.checkbox("Auto-save", value=st.session_state.autosave, key="autosave")
 
 if save_col.button("Save CSV"):
     df = assign_ids(st.session_state.video_df.copy())
