@@ -26,6 +26,7 @@ DEFAULT_MODEL = "phi3:mini"
 DEFAULT_TEMPERATURE = 0.7
 DEFAULT_MAX_TOKENS = 4096
 DEFAULT_TOP_P = 0.95
+DEFAULT_SEED = 1234
 
 # ComfyUI API host/port
 COMFYUI_HOST = os.getenv("COMFYUI_HOST", "127.0.0.1")
@@ -130,6 +131,7 @@ def load_data(path: str) -> pd.DataFrame:
         "temperature",
         "max_tokens",
         "top_p",
+        "seed",
         "story_prompt",
         "bgm_prompt",
         "taste_prompt",
@@ -150,6 +152,7 @@ def load_data(path: str) -> pd.DataFrame:
         df["temperature"] = DEFAULT_TEMPERATURE
         df["max_tokens"] = DEFAULT_MAX_TOKENS
         df["top_p"] = DEFAULT_TOP_P
+        df["seed"] = DEFAULT_SEED
     else:
         missing_cols = [c for c in columns if c not in df.columns]
         for c in missing_cols:
@@ -173,6 +176,8 @@ def load_data(path: str) -> pd.DataFrame:
             df["max_tokens"] = DEFAULT_MAX_TOKENS
         if "top_p" in missing_cols:
             df["top_p"] = DEFAULT_TOP_P
+        if "seed" in missing_cols:
+            df["seed"] = DEFAULT_SEED
         df = df[columns]
         df["selected"] = df["selected"].fillna(False).astype(bool)
         df["id"] = df["id"].astype(str)
@@ -236,7 +241,13 @@ def list_comfy_models() -> tuple[list[str], list[str], list[str]]:
     return checkpoints, vaes, loras
 
 
-def generate_image(prompt: str, checkpoint: str, vae: str, debug: bool = False) -> Optional[bytes]:
+def generate_image(
+    prompt: str,
+    checkpoint: str,
+    vae: str,
+    seed: int,
+    debug: bool = False,
+) -> Optional[bytes]:
     """Generate image via ComfyUI using polling."""
     base = f"http://{COMFYUI_HOST}:{COMFYUI_PORT}"
     prompt_url = f"{base}/prompt"
@@ -244,6 +255,7 @@ def generate_image(prompt: str, checkpoint: str, vae: str, debug: bool = False) 
     workflow = json.loads(json.dumps(BASE_WORKFLOW))
     workflow["6"]["inputs"]["text"] = prompt
     workflow["4"]["inputs"]["ckpt_name"] = checkpoint
+    workflow["3"]["inputs"]["seed"] = seed
 
     payload = {"prompt": workflow}
 
@@ -439,6 +451,11 @@ edited_df = st.data_editor(
             min_value=0.0,
             max_value=1.0,
         ),
+        "seed": st.column_config.NumberColumn(
+            "Seed",
+            step=1,
+            format="%d",
+        ),
     },
     num_rows="dynamic",
     hide_index=True,
@@ -506,7 +523,11 @@ if st.button("Generate images", disabled=generate_disabled):
         if not prompt:
             st.warning(f"No story prompt for row {row.get('id', idx)}")
             continue
-        img_bytes = generate_image(prompt, checkpoint, vae, debug=DEBUG_MODE)
+        seed_val = row.get("seed", DEFAULT_SEED)
+        if pd.isna(seed_val) or seed_val == "":
+            seed_val = DEFAULT_SEED
+        seed_val = int(seed_val)
+        img_bytes = generate_image(prompt, checkpoint, vae, seed_val, debug=DEBUG_MODE)
         title = row.get("title", "")
         folder = os.path.join("vids", f"{row.get('id', idx)}_{slugify(title)}", "panels")
         if img_bytes:
