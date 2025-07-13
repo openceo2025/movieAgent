@@ -542,6 +542,7 @@ if st.button("Generate images", disabled=generate_disabled):
             continue
         seed_val = row.get("seed", "")
         if pd.isna(seed_val) or str(seed_val).strip() == "":
+            # Empty -> generate a random seed on our side
             seed_val = random.randint(0, 2**32 - 1)
         else:
             seed_val = int(seed_val)
@@ -556,7 +557,11 @@ if st.button("Generate images", disabled=generate_disabled):
         folder = os.path.join("vids", f"{row.get('id', idx)}_{slugify(title)}", "panels")
 
         for b in range(batch_count):
-            current_seed = seed_val + b if batch_count > 1 else seed_val
+            if seed_val == -1:
+                # -1 is passed through so ComfyUI handles randomization
+                current_seed = -1
+            else:
+                current_seed = seed_val + b if batch_count > 1 else seed_val
             img_bytes = generate_image(prompt, checkpoint, vae, current_seed, debug=DEBUG_MODE)
             if img_bytes:
                 os.makedirs(folder, exist_ok=True)

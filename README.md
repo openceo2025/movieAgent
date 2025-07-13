@@ -30,7 +30,8 @@ streamlit run app.py -- --debug
 編集可能です。
 デフォルト値は `temperature=0.7`、`max_tokens=4096`、`top_p=0.95`、`seed=1234`、`batch_count=1`
 です。`seed` 欄を空欄にすると、画像生成時に毎回ランダムなシード値が送られ
-ます。`batch_count` を空欄にすると 1 枚だけ生成します。
+ます。`-1` を入力した場合はその値をそのまま API へ渡し、ComfyUI 側でランダム
+シードが採用されます。`batch_count` を空欄にすると 1 枚だけ生成します。
 
 "Generate story prompts" ボタンを押すと、選択された行のプロンプト生成後に
 CSV へ自動保存し、ページをリフレッシュして結果を即座に反映します。
