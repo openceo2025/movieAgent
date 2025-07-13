@@ -36,6 +36,8 @@ DEFAULT_NEGATIVE_PROMPT = (
 # Default image settings for ComfyUI
 DEFAULT_CFG = 7
 DEFAULT_STEPS = 28
+DEFAULT_WIDTH = 1024
+DEFAULT_HEIGHT = 1024
 
 # ComfyUI API host/port
 COMFYUI_HOST = os.getenv("COMFYUI_HOST", "127.0.0.1")
@@ -52,7 +54,7 @@ BASE_WORKFLOW = {
             "model": ["4", 0],
             "negative": ["7", 0],
             "positive": ["6", 0],
-            "sampler_name": "dpmpp_2m_sde_karras",
+            "sampler_name": "euler",
             "scheduler": "karras",
             "seed": 8566257,
             "steps": DEFAULT_STEPS,
@@ -64,7 +66,7 @@ BASE_WORKFLOW = {
     },
     "5": {
         "class_type": "EmptyLatentImage",
-        "inputs": {"batch_size": 1, "height": 512, "width": 512},
+        "inputs": {"batch_size": 1, "height": DEFAULT_HEIGHT, "width": DEFAULT_WIDTH},
     },
     "6": {
         "class_type": "CLIPTextEncode",
@@ -142,6 +144,8 @@ def load_data(path: str) -> pd.DataFrame:
         "top_p",
         "seed",
         "batch_count",
+        "width",
+        "height",
         "story_prompt",
         "bgm_prompt",
         "taste_prompt",
@@ -165,6 +169,8 @@ def load_data(path: str) -> pd.DataFrame:
         df["top_p"] = DEFAULT_TOP_P
         df["seed"] = DEFAULT_SEED
         df["batch_count"] = 1
+        df["width"] = DEFAULT_WIDTH
+        df["height"] = DEFAULT_HEIGHT
         df["controlnet_image"] = ""
     else:
         missing_cols = [c for c in columns if c not in df.columns]
@@ -193,6 +199,10 @@ def load_data(path: str) -> pd.DataFrame:
             df["seed"] = DEFAULT_SEED
         if "batch_count" in missing_cols:
             df["batch_count"] = 1
+        if "width" in missing_cols:
+            df["width"] = DEFAULT_WIDTH
+        if "height" in missing_cols:
+            df["height"] = DEFAULT_HEIGHT
         if "controlnet_image" in missing_cols:
             df["controlnet_image"] = ""
         df = df[columns]
@@ -267,6 +277,8 @@ def generate_image(
     checkpoint: str,
     vae: str,
     seed: int,
+    width: int = DEFAULT_WIDTH,
+    height: int = DEFAULT_HEIGHT,
     control_image: str | None = None,
     debug: bool = False,
 ) -> Optional[bytes]:
@@ -277,7 +289,11 @@ def generate_image(
     workflow = json.loads(json.dumps(BASE_WORKFLOW))
     workflow["6"]["inputs"]["text"] = prompt
     workflow["4"]["inputs"]["ckpt_name"] = checkpoint
+    if vae:
+        workflow["4"]["inputs"]["vae_name"] = vae
     workflow["3"]["inputs"]["seed"] = seed
+    workflow["5"]["inputs"]["width"] = width
+    workflow["5"]["inputs"]["height"] = height
 
     if control_image:
         encoded = base64.b64encode(open(control_image, "rb").read()).decode()
@@ -494,6 +510,16 @@ edited_df = st.data_editor(
             min_value=1,
             step=1,
         ),
+        "width": st.column_config.NumberColumn(
+            "Width",
+            min_value=64,
+            step=64,
+        ),
+        "height": st.column_config.NumberColumn(
+            "Height",
+            min_value=64,
+            step=64,
+        ),
     },
     num_rows="dynamic",
     hide_index=True,
@@ -585,6 +611,14 @@ if st.button("Generate images", disabled=generate_disabled):
         folder = os.path.join("vids", f"{row.get('id', idx)}_{slugify(title)}", "panels")
 
         control_img = row.get("controlnet_image", "")
+        width = row.get("width", DEFAULT_WIDTH)
+        if pd.isna(width) or str(width).strip() == "":
+            width = DEFAULT_WIDTH
+        width = int(width)
+        height = row.get("height", DEFAULT_HEIGHT)
+        if pd.isna(height) or str(height).strip() == "":
+            height = DEFAULT_HEIGHT
+        height = int(height)
 
         for b in range(batch_count):
             if seed_val == -1:
@@ -597,6 +631,8 @@ if st.button("Generate images", disabled=generate_disabled):
                 checkpoint,
                 vae,
                 current_seed,
+                width=width,
+                height=height,
                 control_image=control_img if control_img else None,
                 debug=DEBUG_MODE,
             )
