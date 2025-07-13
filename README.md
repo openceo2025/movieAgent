@@ -26,9 +26,9 @@ streamlit run app.py -- --debug
 
 動画リストは **Streamlit Data Editor** を利用しており、`num_rows="dynamic"`
 を指定することで、表から直接行を追加・削除できます。モデルの選択に加え、
-`temperature`、`max_tokens`、`top_p`、`seed`、`batch_count` といった生成パラメータも列として
+`temperature`、`max_tokens`、`top_p`、`seed`、`batch_count`、`width`、`height` といった生成パラメータも列として
 編集可能です。
-デフォルト値は `temperature=0.7`、`max_tokens=4096`、`top_p=0.95`、`seed=1234`、`batch_count=1`
+デフォルト値は `temperature=0.7`、`max_tokens=4096`、`top_p=0.95`、`seed=1234`、`batch_count=1`、`width=1024`、`height=1024`
 です。`seed` 欄を空欄にすると、画像生成時に毎回ランダムなシード値が送られ
 ます。`-1` を入力した場合はその値をそのまま API へ渡し、ComfyUI 側でランダム
 シードが採用されます。`batch_count` を空欄にすると 1 枚だけ生成します。
