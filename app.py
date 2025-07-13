@@ -28,6 +28,14 @@ DEFAULT_TEMPERATURE = 0.7
 DEFAULT_MAX_TOKENS = 4096
 DEFAULT_TOP_P = 0.95
 DEFAULT_SEED = 1234
+DEFAULT_NEGATIVE_PROMPT = (
+    "embedding:BadDream:0.6, embedding:BadHandsV2:0.4, "
+    "blurry, watermark, lowres, jpeg artifacts"
+)
+
+# Default image settings for ComfyUI
+DEFAULT_CFG = 7
+DEFAULT_STEPS = 28
 
 # ComfyUI API host/port
 COMFYUI_HOST = os.getenv("COMFYUI_HOST", "127.0.0.1")
@@ -38,16 +46,16 @@ BASE_WORKFLOW = {
     "3": {
         "class_type": "KSampler",
         "inputs": {
-            "cfg": 8,
+            "cfg": DEFAULT_CFG,
             "denoise": 1,
             "latent_image": ["5", 0],
             "model": ["4", 0],
             "negative": ["7", 0],
             "positive": ["6", 0],
-            "sampler_name": "euler",
-            "scheduler": "normal",
+            "sampler_name": "dpmpp_2m_sde_karras",
+            "scheduler": "karras",
             "seed": 8566257,
-            "steps": 20,
+            "steps": DEFAULT_STEPS,
         },
     },
     "4": {
@@ -64,7 +72,7 @@ BASE_WORKFLOW = {
     },
     "7": {
         "class_type": "CLIPTextEncode",
-        "inputs": {"clip": ["4", 1], "text": "bad hands"},
+        "inputs": {"clip": ["4", 1], "text": DEFAULT_NEGATIVE_PROMPT},
     },
     "8": {
         "class_type": "VAEDecode",
@@ -140,6 +148,7 @@ def load_data(path: str) -> pd.DataFrame:
         "character_voice",
         "status",
         "needs_approve",
+        "controlnet_image",
     ]
     try:
         df = pd.read_csv(path)
@@ -156,6 +165,7 @@ def load_data(path: str) -> pd.DataFrame:
         df["top_p"] = DEFAULT_TOP_P
         df["seed"] = DEFAULT_SEED
         df["batch_count"] = 1
+        df["controlnet_image"] = ""
     else:
         missing_cols = [c for c in columns if c not in df.columns]
         for c in missing_cols:
@@ -183,6 +193,8 @@ def load_data(path: str) -> pd.DataFrame:
             df["seed"] = DEFAULT_SEED
         if "batch_count" in missing_cols:
             df["batch_count"] = 1
+        if "controlnet_image" in missing_cols:
+            df["controlnet_image"] = ""
         df = df[columns]
         df["selected"] = df["selected"].fillna(False).astype(bool)
         df["id"] = df["id"].astype(str)
@@ -255,6 +267,7 @@ def generate_image(
     checkpoint: str,
     vae: str,
     seed: int,
+    control_image: str | None = None,
     debug: bool = False,
 ) -> Optional[bytes]:
     """Generate image via ComfyUI using polling."""
@@ -265,6 +278,18 @@ def generate_image(
     workflow["6"]["inputs"]["text"] = prompt
     workflow["4"]["inputs"]["ckpt_name"] = checkpoint
     workflow["3"]["inputs"]["seed"] = seed
+
+    if control_image:
+        encoded = base64.b64encode(open(control_image, "rb").read()).decode()
+        workflow["10"] = {
+            "class_type": "LoadImage",
+            "inputs": {"image": encoded},
+        }
+        workflow["11"] = {
+            "class_type": "ControlNetLoader",
+            "inputs": {"image": ["10", 0]},
+        }
+        workflow["3"]["inputs"]["control_net"] = ["11", 0]
 
     payload = {"prompt": workflow}
 
@@ -413,9 +438,10 @@ for col, options in [
 st.session_state.video_df = assign_ids(df)
 
 st.write("### Video Spreadsheet")
+df_display = st.session_state.video_df.drop(columns=["controlnet_image"], errors="ignore")
 
 edited_df = st.data_editor(
-    st.session_state.video_df,
+    df_display,
     column_config={
         "selected": st.column_config.CheckboxColumn("Select"),
         "id": st.column_config.TextColumn("ID", disabled=True),
@@ -476,10 +502,12 @@ edited_df = st.data_editor(
 )
 new_df = assign_ids(edited_df.copy())
 if not new_df["id"].equals(edited_df["id"]):
-    st.session_state.video_df = new_df
+    for col in df_display.columns:
+        st.session_state.video_df[col] = new_df[col]
     rerun_with_message("Assigned IDs to new rows")
 else:
-    st.session_state.video_df = new_df
+    for col in df_display.columns:
+        st.session_state.video_df[col] = new_df[col]
 if st.session_state.autosave and not st.session_state.video_df.equals(
     st.session_state.last_saved_df
 ):
@@ -556,13 +584,22 @@ if st.button("Generate images", disabled=generate_disabled):
         title = row.get("title", "")
         folder = os.path.join("vids", f"{row.get('id', idx)}_{slugify(title)}", "panels")
 
+        control_img = row.get("controlnet_image", "")
+
         for b in range(batch_count):
             if seed_val == -1:
                 # -1 is passed through so ComfyUI handles randomization
                 current_seed = -1
             else:
                 current_seed = seed_val + b if batch_count > 1 else seed_val
-            img_bytes = generate_image(prompt, checkpoint, vae, current_seed, debug=DEBUG_MODE)
+            img_bytes = generate_image(
+                prompt,
+                checkpoint,
+                vae,
+                current_seed,
+                control_image=control_img if control_img else None,
+                debug=DEBUG_MODE,
+            )
             if img_bytes:
                 os.makedirs(folder, exist_ok=True)
                 out_path = unique_path(os.path.join(folder, "image.png"))
