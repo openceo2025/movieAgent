@@ -218,7 +218,11 @@ def list_ollama_models() -> list[str]:
 
 
 def list_comfy_models() -> tuple[list[str], list[str], list[str]]:
-    """Return (checkpoints, vae, loras) from ComfyUI."""
+    """Return (checkpoints, vae, loras) from ComfyUI.
+
+    A blank string is prepended to the VAE and LoRA lists so users can keep
+    these fields empty if desired.
+    """
     base = f"http://{COMFYUI_HOST}:{COMFYUI_PORT}"
     try:
         res = requests.get(f"{base}/models", timeout=5)
@@ -241,8 +245,8 @@ def list_comfy_models() -> tuple[list[str], list[str], list[str]]:
         return []
 
     checkpoints = fetch("checkpoints")
-    vaes = fetch("vae")
-    loras = fetch("loras")
+    vaes = [""] + fetch("vae")
+    loras = [""] + fetch("loras")
     return checkpoints, vaes, loras
 
 
@@ -403,11 +407,9 @@ for col, options in [
     ("comfy_lora", st.session_state.comfy_loras),
 ]:
     if col not in df.columns:
-        df[col] = options[0] if options else ""
+        df[col] = ""
     else:
         df[col] = df[col].fillna("")
-        if options and (df[col] == "").any():
-            df.loc[df[col] == "", col] = options[0]
 st.session_state.video_df = assign_ids(df)
 
 st.write("### Video Spreadsheet")
@@ -430,12 +432,12 @@ edited_df = st.data_editor(
         "comfy_vae": st.column_config.SelectboxColumn(
             "VAE",
             options=st.session_state.comfy_vaes,
-            default=st.session_state.comfy_vaes[0] if st.session_state.comfy_vaes else "",
+            default="",
         ),
         "comfy_lora": st.column_config.SelectboxColumn(
             "LoRA",
             options=st.session_state.comfy_loras,
-            default=st.session_state.comfy_loras[0] if st.session_state.comfy_loras else "",
+            default="",
         ),
         "temperature": st.column_config.NumberColumn(
             "Temp",
@@ -472,7 +474,12 @@ edited_df = st.data_editor(
     use_container_width=True,
     key="video_editor",
 )
-st.session_state.video_df = assign_ids(edited_df)
+new_df = assign_ids(edited_df.copy())
+if not new_df["id"].equals(edited_df["id"]):
+    st.session_state.video_df = new_df
+    rerun_with_message("Assigned IDs to new rows")
+else:
+    st.session_state.video_df = new_df
 if st.session_state.autosave and not st.session_state.video_df.equals(
     st.session_state.last_saved_df
 ):
