@@ -1,9 +1,6 @@
 import streamlit as st
 import pandas as pd
-import subprocess
 import requests
-import argparse
-import sys
 import os
 import json
 import base64
@@ -12,13 +9,7 @@ import random
 from pathlib import Path
 from typing import Optional
 
-# Parse CLI arguments passed after `--` when running via Streamlit
-parser = argparse.ArgumentParser(add_help=False)
-parser.add_argument("--debug", action="store_true", help="Enable debug logging")
-args, _ = parser.parse_known_args()
-DEBUG_MODE = args.debug
-if DEBUG_MODE:
-    print("[DEBUG] Debug mode enabled")
+from .ollama import list_ollama_models, generate_story_prompt, DEBUG_MODE
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 CSV_FILE = str(BASE_DIR / "videos.csv")
@@ -95,28 +86,6 @@ from .csv_manager import (
     slugify,
     unique_path,
 )
-
-
-def list_ollama_models() -> list[str]:
-    """Return available Ollama models."""
-    try:
-        result = subprocess.run(
-            ["ollama", "list"],
-            capture_output=True,
-            text=True,
-            encoding="utf-8",
-            errors="replace",
-            check=True,
-        )
-    except Exception:
-        return ["phi3:mini"]
-    lines = result.stdout.strip().splitlines()
-    models = []
-    for line in lines[1:]:
-        parts = line.split()
-        if parts:
-            models.append(parts[0])
-    return models or ["phi3:mini"]
 
 
 def list_comfy_models() -> tuple[list[str], list[str], list[str]]:
@@ -251,43 +220,6 @@ def generate_image(
     return None
 
 
-def generate_story_prompt(
-    synopsis: str,
-    model: str,
-    temperature: float,
-    max_tokens: int,
-    top_p: float,
-    debug: bool = False,
-) -> str:
-    prompt = f"Generate a short story based on this synopsis:\n{synopsis}\n"
-    url = "http://localhost:11434/api/generate"
-    payload = {
-        "model": model,
-        "prompt": prompt,
-        "temperature": temperature,
-        "num_predict": max_tokens,
-        "top_p": top_p,
-        "stream": False,
-    }
-    if debug:
-        print("[DEBUG] Request payload:", payload)
-    try:
-        res = requests.post(url, json=payload, timeout=60)
-        if debug:
-            print("[DEBUG] Response status:", res.status_code)
-            print("[DEBUG] Raw response:", res.text)
-        res.raise_for_status()
-        data = res.json()
-        if debug:
-            print("[DEBUG] Parsed response:", data)
-        return data.get("response", "").strip()
-    except requests.exceptions.RequestException as e:
-        st.error(f"Ollama API error: {e}")
-    except ValueError as e:
-        st.error(f"Invalid response from Ollama: {e}")
-    except Exception as e:
-        st.error(f"Error: {e}")
-    return None
 
 st.set_page_config(page_title="Video Agent", layout="wide")
 
