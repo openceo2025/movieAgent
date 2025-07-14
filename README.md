@@ -16,9 +16,9 @@ pip install -r requirements.txt
 ## UI の起動方法
 
 ```bash
-streamlit run app.py
+streamlit run movie_agent/app.py
 # デバッグ表示を有効化する場合
-streamlit run app.py -- --debug
+streamlit run movie_agent/app.py -- --debug
 ```
 
 実行後、ブラウザで [http://localhost:8501](http://localhost:8501) を開くと UI が表示されます。

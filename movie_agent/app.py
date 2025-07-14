@@ -10,6 +10,7 @@ import json
 import base64
 import time
 import random
+from pathlib import Path
 from typing import Optional
 
 # Parse CLI arguments passed after `--` when running via Streamlit
@@ -20,7 +21,8 @@ DEBUG_MODE = args.debug
 if DEBUG_MODE:
     print("[DEBUG] Debug mode enabled")
 
-CSV_FILE = "videos.csv"
+BASE_DIR = Path(__file__).resolve().parent.parent
+CSV_FILE = str(BASE_DIR / "videos.csv")
 
 # Default generation parameters
 DEFAULT_MODEL = "phi3:mini"
@@ -582,7 +584,12 @@ if st.button("Generate images", disabled=generate_disabled):
             batch_count = int(batch_count)
 
         title = row.get("title", "")
-        folder = os.path.join("vids", f"{row.get('id', idx)}_{slugify(title)}", "panels")
+        folder = os.path.join(
+            BASE_DIR,
+            "vids",
+            f"{row.get('id', idx)}_{slugify(title)}",
+            "panels",
+        )
 
         control_img = row.get("controlnet_image", "")
         width = row.get("width", DEFAULT_WIDTH)
