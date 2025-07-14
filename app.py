@@ -456,7 +456,7 @@ edited_df = st.data_editor(
     df_display,
     column_config={
         "selected": st.column_config.CheckboxColumn("Select"),
-        "id": st.column_config.TextColumn("ID"),
+        "id": st.column_config.TextColumn("ID", disabled=True),
         "llm_model": st.column_config.SelectboxColumn(
             "Model",
             options=st.session_state.models,
