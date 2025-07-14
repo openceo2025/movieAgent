@@ -16,9 +16,10 @@ pip install -r requirements.txt
 ## UI の起動方法
 
 ```bash
-python -m movie_agent.main
+# 通常起動
+streamlit run movie_agent/app.py
 # デバッグ表示を有効化する場合
-python -m movie_agent.main --debug
+streamlit run movie_agent/app.py -- --debug
 ```
 
 実行後、ブラウザで [http://localhost:8501](http://localhost:8501) を開くと UI が表示されます。
