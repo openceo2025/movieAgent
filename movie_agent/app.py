@@ -1,6 +1,6 @@
 """Compatibility shim for older entrypoint."""
 
-from .gui import main
+from movie_agent.gui import main
 
 
 if __name__ == "__main__":

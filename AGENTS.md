@@ -86,7 +86,7 @@ python -m venv .venv && .venv\Scripts\activate
 pip install -r requirements.txt
 
 # 起動
-streamlit run app.py
+streamlit run movie_agent/app.py
 # -> ブラウザで http://localhost:8501/
 ```
 
