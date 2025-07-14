@@ -1,9 +1,5 @@
-from pathlib import Path
-import sys
 import subprocess
 import requests
-
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from movie_agent.ollama import list_ollama_models, generate_story_prompt
 
@@ -15,7 +11,11 @@ def test_list_ollama_models(monkeypatch):
 
     def fake_run(*args, **kwargs):
         return Dummy(
-            "NAME\tMODIFIED\tSIZE\nphi3:mini 2024-01-01 1GB\nllama2:7b 2024-01-02 2GB\n"
+            (
+                "NAME\tMODIFIED\tSIZE\n"
+                "phi3:mini 2024-01-01 1GB\n"
+                "llama2:7b 2024-01-02 2GB\n"
+            )
         )
 
     monkeypatch.setattr(subprocess, "run", fake_run)

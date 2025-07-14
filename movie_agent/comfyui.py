@@ -44,7 +44,11 @@ BASE_WORKFLOW = {
     },
     "5": {
         "class_type": "EmptyLatentImage",
-        "inputs": {"batch_size": 1, "height": DEFAULT_HEIGHT, "width": DEFAULT_WIDTH},
+        "inputs": {
+            "batch_size": 1,
+            "height": DEFAULT_HEIGHT,
+            "width": DEFAULT_WIDTH,
+        },
     },
     "6": {
         "class_type": "CLIPTextEncode",
@@ -161,7 +165,8 @@ def generate_image(
             hist_resp = r.json()
             if debug:
                 try:
-                    print("[DEBUG] /history response:", json.dumps(hist_resp)[:200])
+                    preview = json.dumps(hist_resp)[:200]
+                    print("[DEBUG] /history response:", preview)
                 except Exception as e:
                     print("[DEBUG] error decoding history response:", e)
             hist = hist_resp.get(prompt_id, {})
@@ -175,7 +180,11 @@ def generate_image(
                             params["subfolder"] = img.get("subfolder")
                         if img.get("type"):
                             params["type"] = img.get("type")
-                        resp = requests.get(view_url, params=params, timeout=10)
+                        resp = requests.get(
+                            view_url,
+                            params=params,
+                            timeout=10,
+                        )
                         resp.raise_for_status()
                         return resp.content
         except requests.exceptions.RequestException as e:
@@ -190,4 +199,9 @@ def generate_image(
     return None
 
 
-__all__ = ["list_comfy_models", "generate_image", "COMFYUI_HOST", "COMFYUI_PORT"]
+__all__ = [
+    "list_comfy_models",
+    "generate_image",
+    "COMFYUI_HOST",
+    "COMFYUI_PORT",
+]
