@@ -60,7 +60,9 @@ def test_generate_image(monkeypatch):
 
     def fake_get(url, *args, **kwargs):
         if url.endswith("/history/abc"):
-            return FakeResponse({"abc": {"outputs": {"9": {"images": [{"filename": "img.png"}]}}}})
+            return FakeResponse(
+                {"abc": {"outputs": {"9": {"images": [{"filename": "img.png"}]}}}}
+            )
         if url.endswith("/view"):
             return FakeResponse(content=b"image-bytes")
         raise AssertionError(url)

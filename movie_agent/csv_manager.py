@@ -30,11 +30,6 @@ def unique_path(path: str) -> str:
     return candidate
 
 
-def assign_ids(df: pd.DataFrame) -> pd.DataFrame:
-    """Return DataFrame unchanged (ID assignment disabled)."""
-    return df
-
-
 def load_data(path: str) -> pd.DataFrame:
     """Load spreadsheet data from ``path``.
 

@@ -29,7 +29,6 @@ DEFAULT_SEED = 1234
 from .csv_manager import (
     load_data,
     save_data,
-    assign_ids,
     slugify,
     unique_path,
     DEFAULT_WIDTH,
@@ -83,7 +82,9 @@ def main() -> None:
     st.session_state.video_df = df
 
     st.write("### Video Spreadsheet")
-    df_display = st.session_state.video_df.drop(columns=["controlnet_image"], errors="ignore")
+    df_display = st.session_state.video_df.drop(
+        columns=["controlnet_image"], errors="ignore"
+    )
 
     edited_df = st.data_editor(
         df_display,
@@ -98,7 +99,11 @@ def main() -> None:
             "checkpoint": st.column_config.SelectboxColumn(
                 "Checkpoint",
                 options=st.session_state.comfy_models,
-                default=st.session_state.comfy_models[0] if st.session_state.comfy_models else "",
+                default=(
+                    st.session_state.comfy_models[0]
+                    if st.session_state.comfy_models
+                    else ""
+                ),
             ),
             "comfy_vae": st.column_config.SelectboxColumn(
                 "VAE",
