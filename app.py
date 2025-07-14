@@ -107,25 +107,20 @@ def unique_path(path: str) -> str:
 def assign_ids(df: pd.DataFrame) -> pd.DataFrame:
     """Assign zero-padded numeric IDs to rows missing an ID."""
     used_ids = set()
-    next_id = 1
-    for val in df.get("id", []):
-        if pd.isna(val):
-            continue
-        sval = str(val)
-        if sval.isdigit():
+    ids = df.get("id", pd.Series(dtype=str))
+
+    for idx, val in ids.items():
+        sval = str(val).strip()
+        if sval.isdigit() and int(sval) not in used_ids:
             num = int(sval)
             used_ids.add(num)
-            if num >= next_id:
-                next_id = num + 1
-
-    for idx, val in df.get("id", pd.Series(dtype=str)).items():
-        sval = str(val)
-        if sval == "" or not sval.isdigit():
-            while next_id in used_ids:
-                next_id += 1
-            df.at[idx, "id"] = f"{next_id:04d}"
-            used_ids.add(next_id)
-            next_id += 1
+            df.at[idx, "id"] = f"{num:04d}"
+        else:
+            new_id = 1
+            while new_id in used_ids:
+                new_id += 1
+            df.at[idx, "id"] = f"{new_id:04d}"
+            used_ids.add(new_id)
     return df
 
 
