@@ -208,6 +208,7 @@ def load_data(path: str) -> pd.DataFrame:
         df = df[columns]
         df["selected"] = df["selected"].fillna(False).astype(bool)
         df["id"] = df["id"].astype(str)
+        df["controlnet_image"] = df["controlnet_image"].fillna("").astype(str)
     df = assign_ids(df)
     return df
 
@@ -295,7 +296,7 @@ def generate_image(
     workflow["5"]["inputs"]["width"] = width
     workflow["5"]["inputs"]["height"] = height
 
-    if control_image:
+    if control_image and isinstance(control_image, str):
         encoded = base64.b64encode(open(control_image, "rb").read()).decode()
         workflow["10"] = {
             "class_type": "LoadImage",
