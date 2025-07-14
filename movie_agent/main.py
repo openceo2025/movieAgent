@@ -1,6 +1,6 @@
 """Entry point for running the Streamlit GUI."""
 
-from . import gui
+from movie_agent import gui
 
 
 def main() -> None:
