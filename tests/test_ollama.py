@@ -14,7 +14,9 @@ def test_list_ollama_models(monkeypatch):
             self.stdout = stdout
 
     def fake_run(*args, **kwargs):
-        return Dummy("NAME\tMODIFIED\tSIZE\nphi3:mini 2024-01-01 1GB\nllama2:7b 2024-01-02 2GB\n")
+        return Dummy(
+            "NAME\tMODIFIED\tSIZE\nphi3:mini 2024-01-01 1GB\nllama2:7b 2024-01-02 2GB\n"
+        )
 
     monkeypatch.setattr(subprocess, "run", fake_run)
     models = list_ollama_models()
@@ -38,4 +40,3 @@ def test_generate_story_prompt(monkeypatch):
     monkeypatch.setattr(requests, "post", fake_post)
     result = generate_story_prompt("A synopsis", "phi3:mini", 0.7, 10, 0.9)
     assert result == "Once upon a time"
-

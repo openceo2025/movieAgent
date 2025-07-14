@@ -81,4 +81,5 @@ def generate_story_prompt(
         st.error(f"Error: {e}")
     return None
 
+
 __all__ = ["list_ollama_models", "generate_story_prompt", "DEBUG_MODE"]
