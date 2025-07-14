@@ -105,27 +105,7 @@ def unique_path(path: str) -> str:
 
 
 def assign_ids(df: pd.DataFrame) -> pd.DataFrame:
-    """Assign zero-padded numeric IDs to rows missing an ID."""
-    used_ids = set()
-    next_id = 1
-    for val in df.get("id", []):
-        if pd.isna(val):
-            continue
-        sval = str(val)
-        if sval.isdigit():
-            num = int(sval)
-            used_ids.add(num)
-            if num >= next_id:
-                next_id = num + 1
-
-    for idx, val in df.get("id", pd.Series(dtype=str)).items():
-        sval = str(val)
-        if sval == "" or not sval.isdigit():
-            while next_id in used_ids:
-                next_id += 1
-            df.at[idx, "id"] = f"{next_id:04d}"
-            used_ids.add(next_id)
-            next_id += 1
+    """Return DataFrame unchanged (ID assignment disabled)."""
     return df
 
 
@@ -178,7 +158,7 @@ def load_data(path: str) -> pd.DataFrame:
             if c == "selected":
                 df[c] = False
             elif c == "id":
-                df[c] = [f"{i+1:04d}" for i in range(len(df))]
+                df[c] = ""
             else:
                 df[c] = ""
         if "llm_model" in missing_cols:
@@ -209,7 +189,6 @@ def load_data(path: str) -> pd.DataFrame:
         df["selected"] = df["selected"].fillna(False).astype(bool)
         df["id"] = df["id"].astype(str)
         df["controlnet_image"] = df["controlnet_image"].fillna("").astype(str)
-    df = assign_ids(df)
     return df
 
 
@@ -452,7 +431,7 @@ for col, options in [
         df[col] = ""
     else:
         df[col] = df[col].fillna("")
-st.session_state.video_df = assign_ids(df)
+st.session_state.video_df = df
 
 st.write("### Video Spreadsheet")
 df_display = st.session_state.video_df.drop(columns=["controlnet_image"], errors="ignore")
@@ -461,7 +440,7 @@ edited_df = st.data_editor(
     df_display,
     column_config={
         "selected": st.column_config.CheckboxColumn("Select"),
-        "id": st.column_config.TextColumn("ID", disabled=True),
+        "id": st.column_config.TextColumn("ID"),
         "llm_model": st.column_config.SelectboxColumn(
             "Model",
             options=st.session_state.models,
@@ -527,14 +506,9 @@ edited_df = st.data_editor(
     use_container_width=True,
     key="video_editor",
 )
-new_df = assign_ids(edited_df.copy())
-if not new_df["id"].equals(edited_df["id"]):
-    for col in df_display.columns:
-        st.session_state.video_df[col] = new_df[col]
-    rerun_with_message("Assigned IDs to new rows")
-else:
-    for col in df_display.columns:
-        st.session_state.video_df[col] = new_df[col]
+new_df = edited_df.copy()
+for col in df_display.columns:
+    st.session_state.video_df[col] = new_df[col]
 if st.session_state.autosave and not st.session_state.video_df.equals(
     st.session_state.last_saved_df
 ):
@@ -578,7 +552,6 @@ if st.button("Generate story prompts", disabled=generate_disabled):
             )
             if prompt is not None:
                 df.at[idx, "story_prompt"] = prompt
-    df = assign_ids(df)
     st.session_state.video_df = df
     save_data(df, CSV_FILE)
     st.session_state.last_saved_df = df.copy()
@@ -587,7 +560,7 @@ if st.button("Generate story prompts", disabled=generate_disabled):
     rerun_with_message("Page reloaded after generating prompts")
 
 if st.button("Generate images", disabled=generate_disabled):
-    df = assign_ids(st.session_state.video_df.copy())
+    df = st.session_state.video_df.copy()
     for idx, row in df[selected_rows].iterrows():
         prompt = row.get("story_prompt", "")
         checkpoint = row.get("checkpoint", "")
@@ -657,7 +630,7 @@ save_col, auto_col = st.columns([1, 1])
 auto_col.checkbox("Auto-save", value=st.session_state.autosave, key="autosave")
 
 if save_col.button("Save CSV"):
-    df = assign_ids(st.session_state.video_df.copy())
+    df = st.session_state.video_df.copy()
     st.session_state.video_df = df
     save_data(df, CSV_FILE)
     st.session_state.last_saved_df = df.copy()
