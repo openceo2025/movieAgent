@@ -1,6 +1,14 @@
+import os
 import pandas as pd
 
-from movie_agent.csv_manager import load_data, save_data
+from movie_agent.csv_manager import (
+    load_data,
+    save_data,
+    unique_path,
+    DEFAULT_MODEL,
+    DEFAULT_MAX_TOKENS,
+    DEFAULT_TEMPERATURE,
+)
 
 
 def test_load_data_missing(tmp_path):
@@ -17,3 +25,32 @@ def test_save_data(tmp_path):
     loaded = pd.read_csv(path)
     assert "selected" not in loaded.columns
     assert str(loaded.loc[0, "id"]) == "1"
+
+
+def test_unique_path(tmp_path):
+    base = tmp_path / "file.txt"
+    base.write_text("x")
+    result1 = unique_path(str(base))
+    assert result1.endswith("_1.txt")
+    assert not os.path.exists(result1)
+    # create the _1 file and ensure next call returns _2
+    (tmp_path / "file_1.txt").write_text("y")
+    result2 = unique_path(str(base))
+    assert result2.endswith("_2.txt")
+    assert not os.path.exists(result2)
+
+
+def test_load_data_defaults_existing_file(tmp_path):
+    path = tmp_path / "data.csv"
+    # CSV missing most columns, including temperature
+    df = pd.DataFrame({"title": ["A"]})
+    df.to_csv(path, index=False)
+    loaded = load_data(path)
+    assert loaded.loc[0, "title"] == "A"
+    # temperature column should be filled with default
+    assert loaded.loc[0, "temperature"] == DEFAULT_TEMPERATURE
+    # other missing columns populated with defaults
+    assert loaded.loc[0, "llm_model"] == DEFAULT_MODEL
+    assert loaded.loc[0, "max_tokens"] == DEFAULT_MAX_TOKENS
+    # selected column should default to False
+    assert bool(loaded.loc[0, "selected"]) is False
