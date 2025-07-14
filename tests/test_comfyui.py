@@ -1,10 +1,6 @@
-from pathlib import Path
-import sys
 import json
 import time
 import requests
-
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from movie_agent.comfyui import list_comfy_models, generate_image
 
@@ -61,7 +57,11 @@ def test_generate_image(monkeypatch):
     def fake_get(url, *args, **kwargs):
         if url.endswith("/history/abc"):
             return FakeResponse(
-                {"abc": {"outputs": {"9": {"images": [{"filename": "img.png"}]}}}}
+                {
+                    "abc": {
+                        "outputs": {"9": {"images": [{"filename": "img.png"}]}}
+                    }
+                }
             )
         if url.endswith("/view"):
             return FakeResponse(content=b"image-bytes")

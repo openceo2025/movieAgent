@@ -5,7 +5,11 @@ import streamlit as st
 
 # Parse optional debug flag when imported
 parser = argparse.ArgumentParser(add_help=False)
-parser.add_argument("--debug", action="store_true", help="Enable debug logging")
+parser.add_argument(
+    "--debug",
+    action="store_true",
+    help="Enable debug logging",
+)
 args, _ = parser.parse_known_args()
 DEBUG_MODE = args.debug
 if DEBUG_MODE:

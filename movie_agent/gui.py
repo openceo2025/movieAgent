@@ -5,12 +5,23 @@ import os
 import random
 from pathlib import Path
 from .comfyui import list_comfy_models, generate_image
-
 from .ollama import list_ollama_models, generate_story_prompt, DEBUG_MODE
+from .csv_manager import (
+    load_data,
+    save_data,
+    slugify,
+    unique_path,
+    DEFAULT_WIDTH,
+    DEFAULT_HEIGHT,
+)
 
 # Parse CLI arguments passed after `--` when launching via Streamlit
 parser = argparse.ArgumentParser(add_help=False)
-parser.add_argument("--debug", action="store_true", help="Enable debug logging")
+parser.add_argument(
+    "--debug",
+    action="store_true",
+    help="Enable debug logging",
+)
 args, _ = parser.parse_known_args()
 if args.debug:
     print("[DEBUG] Debug mode enabled")
@@ -25,15 +36,6 @@ DEFAULT_MAX_TOKENS = 4096
 DEFAULT_TOP_P = 0.95
 DEFAULT_SEED = 1234
 
-
-from .csv_manager import (
-    load_data,
-    save_data,
-    slugify,
-    unique_path,
-    DEFAULT_WIDTH,
-    DEFAULT_HEIGHT,
-)
 
 st.set_page_config(page_title="Video Agent", layout="wide")
 
@@ -170,7 +172,7 @@ def main() -> None:
         st.session_state.last_saved_df = st.session_state.video_df.copy()
         st.info("Auto-saved to CSV")
 
-    selected_rows = st.session_state.video_df["selected"] == True
+    selected_rows = st.session_state.video_df["selected"]
     generate_disabled = not selected_rows.any()
 
     if st.button("Generate story prompts", disabled=generate_disabled):
@@ -258,7 +260,9 @@ def main() -> None:
                     # -1 is passed through so ComfyUI handles randomization
                     current_seed = -1
                 else:
-                    current_seed = seed_val + b if batch_count > 1 else seed_val
+                    current_seed = (
+                        seed_val + b if batch_count > 1 else seed_val
+                    )
                 img_bytes = generate_image(
                     prompt,
                     checkpoint,
@@ -276,9 +280,11 @@ def main() -> None:
                         f.write(img_bytes)
                     st.success(f"Image saved to {out_path}")
                 else:
-                    st.error(
-                        f"Failed to generate image for row {row.get('id', idx)} (batch {b+1})"
+                    message = (
+                        "Failed to generate image for row "
+                        f"{row.get('id', idx)} (batch {b+1})"
                     )
+                    st.error(message)
 
         st.session_state.video_df = df
         save_data(df, CSV_FILE)
@@ -286,7 +292,11 @@ def main() -> None:
         rerun_with_message("Page reloaded after generating images")
 
     save_col, auto_col = st.columns([1, 1])
-    auto_col.checkbox("Auto-save", value=st.session_state.autosave, key="autosave")
+    auto_col.checkbox(
+        "Auto-save",
+        value=st.session_state.autosave,
+        key="autosave",
+    )
 
     if save_col.button("Save CSV"):
         df = st.session_state.video_df.copy()
