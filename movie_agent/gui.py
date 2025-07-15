@@ -4,7 +4,12 @@ import pandas as pd
 import os
 import random
 from pathlib import Path
-from .comfyui import list_comfy_models, generate_image
+from .comfyui import (
+    list_comfy_models,
+    generate_image,
+    DEFAULT_CFG,
+    DEFAULT_STEPS,
+)
 from .ollama import list_ollama_models, generate_story_prompt, DEBUG_MODE
 from .csv_manager import (
     load_data,
@@ -136,6 +141,17 @@ def main() -> None:
                 min_value=0.0,
                 max_value=1.0,
             ),
+            "cfg": st.column_config.NumberColumn(
+                "CFG",
+                format="%.1f",
+                step=0.5,
+                min_value=0.0,
+            ),
+            "steps": st.column_config.NumberColumn(
+                "Steps",
+                min_value=1,
+                step=1,
+            ),
             "seed": st.column_config.NumberColumn(
                 "Seed",
                 step=1,
@@ -258,6 +274,16 @@ def main() -> None:
                 height = DEFAULT_HEIGHT
             height = int(height)
 
+            cfg_val = row.get("cfg", DEFAULT_CFG)
+            if pd.isna(cfg_val) or str(cfg_val).strip() == "":
+                cfg_val = DEFAULT_CFG
+            cfg_val = float(cfg_val)
+
+            steps_val = row.get("steps", DEFAULT_STEPS)
+            if pd.isna(steps_val) or str(steps_val).strip() == "":
+                steps_val = DEFAULT_STEPS
+            steps_val = int(steps_val)
+
             for b in range(batch_count):
                 if seed_val == -1:
                     # -1 is passed through so ComfyUI handles randomization
@@ -273,6 +299,8 @@ def main() -> None:
                     current_seed,
                     width=width,
                     height=height,
+                    cfg=cfg_val,
+                    steps=steps_val,
                     control_image=control_img if control_img else None,
                     debug=DEBUG_MODE,
                 )

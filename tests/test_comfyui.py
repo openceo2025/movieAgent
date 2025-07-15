@@ -71,5 +71,5 @@ def test_generate_image(monkeypatch):
     monkeypatch.setattr(requests, "get", fake_get)
     monkeypatch.setattr(time, "sleep", lambda x: None)
 
-    data = generate_image("p", "ckpt", "", 1)
+    data = generate_image("p", "ckpt", "", 1, cfg=5, steps=20)
     assert data == b"image-bytes"
