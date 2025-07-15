@@ -105,6 +105,8 @@ def generate_image(
     seed: int,
     width: int = DEFAULT_WIDTH,
     height: int = DEFAULT_HEIGHT,
+    cfg: float = DEFAULT_CFG,
+    steps: int = DEFAULT_STEPS,
     control_image: str | None = None,
     debug: bool = False,
 ) -> Optional[bytes]:
@@ -118,6 +120,8 @@ def generate_image(
     if vae:
         workflow["4"]["inputs"]["vae_name"] = vae
     workflow["3"]["inputs"]["seed"] = seed
+    workflow["3"]["inputs"]["cfg"] = cfg
+    workflow["3"]["inputs"]["steps"] = steps
     workflow["5"]["inputs"]["width"] = width
     workflow["5"]["inputs"]["height"] = height
 

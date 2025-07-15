@@ -8,6 +8,8 @@ from movie_agent.csv_manager import (
     DEFAULT_MODEL,
     DEFAULT_MAX_TOKENS,
     DEFAULT_TEMPERATURE,
+    DEFAULT_CFG,
+    DEFAULT_STEPS,
 )
 
 
@@ -52,5 +54,7 @@ def test_load_data_defaults_existing_file(tmp_path):
     # other missing columns populated with defaults
     assert loaded.loc[0, "llm_model"] == DEFAULT_MODEL
     assert loaded.loc[0, "max_tokens"] == DEFAULT_MAX_TOKENS
+    assert loaded.loc[0, "cfg"] == DEFAULT_CFG
+    assert loaded.loc[0, "steps"] == DEFAULT_STEPS
     # selected column should default to False
     assert bool(loaded.loc[0, "selected"]) is False

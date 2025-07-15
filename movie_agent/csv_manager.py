@@ -2,6 +2,8 @@ import os
 import re
 import pandas as pd
 
+from .comfyui import DEFAULT_CFG, DEFAULT_STEPS
+
 # Default generation parameters used when initializing a new CSV
 DEFAULT_MODEL = "phi3:mini"
 DEFAULT_TEMPERATURE = 0.7
@@ -48,6 +50,8 @@ def load_data(path: str) -> pd.DataFrame:
         "temperature",
         "max_tokens",
         "top_p",
+        "cfg",
+        "steps",
         "seed",
         "batch_count",
         "width",
@@ -73,6 +77,8 @@ def load_data(path: str) -> pd.DataFrame:
         df["temperature"] = DEFAULT_TEMPERATURE
         df["max_tokens"] = DEFAULT_MAX_TOKENS
         df["top_p"] = DEFAULT_TOP_P
+        df["cfg"] = DEFAULT_CFG
+        df["steps"] = DEFAULT_STEPS
         df["seed"] = DEFAULT_SEED
         df["batch_count"] = 1
         df["width"] = DEFAULT_WIDTH
@@ -101,6 +107,10 @@ def load_data(path: str) -> pd.DataFrame:
             df["max_tokens"] = DEFAULT_MAX_TOKENS
         if "top_p" in missing_cols:
             df["top_p"] = DEFAULT_TOP_P
+        if "cfg" in missing_cols:
+            df["cfg"] = DEFAULT_CFG
+        if "steps" in missing_cols:
+            df["steps"] = DEFAULT_STEPS
         if "seed" in missing_cols:
             df["seed"] = DEFAULT_SEED
         if "batch_count" in missing_cols:
