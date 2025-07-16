@@ -24,6 +24,8 @@ def test_load_data_missing(tmp_path):
     assert "movie_prompt" in df.columns
     assert "video_length" in df.columns
     assert "fps" in df.columns
+    assert "batch_count" in df.columns
+    assert "controlnet_image" in df.columns
 
 
 def test_save_data(tmp_path):
@@ -68,3 +70,5 @@ def test_load_data_defaults_existing_file(tmp_path):
     assert loaded.loc[0, "video_length"] == DEFAULT_VIDEO_LENGTH
     assert loaded.loc[0, "fps"] == DEFAULT_FPS
     assert loaded.loc[0, "movie_prompt"] == ""
+    assert loaded.loc[0, "batch_count"] == 1
+    assert loaded.loc[0, "controlnet_image"] == ""
