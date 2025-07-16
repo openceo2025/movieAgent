@@ -52,3 +52,24 @@ export COMFYUI_PATH=/path/to/ComfyUI
 現時点ではまだ自動連携処理は実装されていませんが、今後この環境変数を利用して
 ComfyUI を呼び出す予定です。
 
+## FramePack サーバーの起動
+
+FramePack は動画フレーム補間を行う Gradio サーバーです。ローカルで利用する場合は
+以下のように公式リポジトリを取得して起動します。
+
+```bash
+# 例
+git clone https://github.com/lllyasviel/FramePack.git
+cd FramePack
+pip install -r requirements.txt
+python demo_gradio.py --port 8001
+```
+
+サーバーのホスト名とポートは `FRAMEPACK_HOST`、`FRAMEPACK_PORT` 環境変数で変更でき
+ます。未設定時はそれぞれ `127.0.0.1` と `8001` が使われます。
+
+## 動画生成の例
+
+Streamlit UI でフレーム画像を用意した行を選択し、画面下部の **Generate videos** ボ
+タンを押すと `vids/<id>_<slug>/video_raw.mp4` が生成されます。フレームパックサーバ
+ーが起動している必要があります。
