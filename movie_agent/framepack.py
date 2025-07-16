@@ -103,6 +103,31 @@ def generate_video(
             except Exception as e2:
                 if debug:
                     print("[DEBUG] framepack retry error:", e2)
+        try:
+            if debug:
+                print("[DEBUG] retrying with fn_index=0")
+            result = client.predict(
+                img_param,
+                prompt,
+                "",
+                seed,
+                video_length,
+                latent_window_size,
+                steps,
+                cfg,
+                gs,
+                rs,
+                gpu_memory_preservation,
+                use_teacache,
+                mp4_crf,
+                fn_index=0,
+            )
+            if debug:
+                print("[DEBUG] framepack response:", result)
+            return result
+        except Exception as e3:
+            if debug:
+                print("[DEBUG] framepack retry error:", e3)
         return None
 
 
