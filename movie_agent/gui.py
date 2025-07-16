@@ -238,6 +238,7 @@ def main() -> None:
 
     if st.button("Generate story prompts", disabled=generate_disabled):
         df = st.session_state.video_df.copy()
+        found_any_panels = False
         for idx, row in df[selected_rows].iterrows():
             synopsis = row.get("synopsis", "")
             model = row.get("llm_model", DEFAULT_MODEL)
@@ -369,6 +370,7 @@ def main() -> None:
             print("[DEBUG] Generate videos button clicked")
             print(f"[DEBUG] {int(selected_rows.sum())} rows selected")
         df = st.session_state.video_df.copy()
+        found_any_panels = False
         for idx, row in df[selected_rows].iterrows():
             title = row.get("title", "")
             base_folder = os.path.join(
@@ -390,6 +392,7 @@ def main() -> None:
                     )
                 st.warning(f"No panels found for row {row.get('id', idx)}")
                 continue
+            found_any_panels = True
             start_image = str(images[0])
             if DEBUG_MODE:
                 print(
@@ -476,7 +479,10 @@ def main() -> None:
         st.session_state.video_df = df
         save_data(df, CSV_FILE)
         st.session_state.last_saved_df = df.copy()
-        rerun_with_message("Page reloaded after generating videos")
+        if not found_any_panels:
+            rerun_with_message("No panels found for selected rows")
+        else:
+            rerun_with_message("Page reloaded after generating videos")
 
     save_col, auto_col = st.columns([1, 1])
     auto_col.checkbox(
