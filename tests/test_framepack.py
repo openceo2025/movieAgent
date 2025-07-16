@@ -115,8 +115,8 @@ def test_generate_video_fallback(monkeypatch):
         def __init__(self, url):
             pass
 
-        def predict(self, *args, api_name=None):
-            calls.append(api_name)
+        def predict(self, *args, api_name=None, fn_index=None):
+            calls.append(api_name if api_name is not None else fn_index)
             if api_name == '/validate_and_process':
                 raise Exception('fail')
             return 'ok'
@@ -144,3 +144,39 @@ def test_generate_video_fallback(monkeypatch):
 
     assert result == 'ok'
     assert calls == ['/validate_and_process', '/predict']
+
+
+def test_generate_video_fallback_fn_index(monkeypatch):
+    calls = []
+
+    class DummyClient:
+        def __init__(self, url):
+            pass
+
+        def predict(self, *args, api_name=None, fn_index=None):
+            calls.append(api_name if api_name is not None else fn_index)
+            raise Exception('fail')
+
+    monkeypatch.setattr(framepack, 'Client', DummyClient)
+    monkeypatch.setattr(framepack, 'handle_file', lambda p: {'path': p})
+    monkeypatch.setattr(framepack, 'FRAMEPACK_HOST', '1.2.3.4')
+    monkeypatch.setattr(framepack, 'FRAMEPACK_PORT', '1234')
+    monkeypatch.setattr(framepack, 'FRAMEPACK_API_NAME', '/validate_and_process')
+
+    result = framepack.generate_video(
+        'start.png',
+        prompt='p',
+        seed=1,
+        video_length=2,
+        latent_window_size=3,
+        steps=4,
+        cfg=5.0,
+        gs=6.0,
+        rs=7.0,
+        gpu_memory_preservation=8.0,
+        use_teacache=True,
+        mp4_crf=9,
+    )
+
+    assert result is None
+    assert calls == ['/validate_and_process', '/predict', 0]
