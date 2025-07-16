@@ -1,0 +1,12 @@
+name: movieagent
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - pip
+  - pip:
+      - streamlit>=1.31
+      - pandas
+      - requests
+      - gradio_client
+      - pytest
