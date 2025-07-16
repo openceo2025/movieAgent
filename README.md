@@ -4,20 +4,19 @@
 
 ## 導入方法
 
+Conda を利用して環境を構築します。`environment.yml` から環境を作成した後、
+アクティブにしてください。
+
 ```bash
-python -m venv .venv
-# Windows
-.venv\\Scripts\\activate
-# macOS/Linux
-source .venv/bin/activate
-pip install -r requirements.txt
+conda env create -f environment.yml
+conda activate movieagent
 ```
 
 ## UI の起動方法
 
-Windows 環境では付属の `start_movie_agent.bat` を実行してください。仮想環境の
-作成と依存関係のインストールを行った後、デバッグモードで Streamlit を起動しま
-す。
+Windows 環境では付属の `start_movie_agent.bat` を実行してください。この
+スクリプトは事前に `movieagent` conda 環境がアクティブであることを前提に、
+デバッグモードで Streamlit を起動します。
 
 ```bash
 start_movie_agent.bat
