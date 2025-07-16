@@ -365,6 +365,8 @@ def main() -> None:
         rerun_with_message("Page reloaded after generating images")
 
     if st.button("Generate videos", disabled=generate_disabled):
+        if DEBUG_MODE:
+            print("[DEBUG] Generate videos button clicked")
         df = st.session_state.video_df.copy()
         for idx, row in df[selected_rows].iterrows():
             title = row.get("title", "")
