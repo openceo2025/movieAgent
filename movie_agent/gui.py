@@ -22,6 +22,7 @@ from .csv_manager import (
     DEFAULT_WIDTH,
     DEFAULT_HEIGHT,
     DEFAULT_FPS,
+    DEFAULT_VIDEO_LENGTH,
 )
 
 # Parse CLI arguments passed after `--` when launching via Streamlit
