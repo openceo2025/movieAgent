@@ -27,9 +27,9 @@ streamlit run movie_agent/app.py -- --debug
 
 動画リストは **Streamlit Data Editor** を利用しており、`num_rows="dynamic"`
 を指定することで、表から直接行を追加・削除できます。モデルの選択に加え、
-`temperature`、`max_tokens`、`top_p`、`cfg`、`steps`、`seed`、`batch_count`、`width`、`height` といった生成パラメータも列として
+`temperature`、`max_tokens`、`top_p`、`cfg`、`steps`、`seed`、`batch_count`、`width`、`height` といった生成パラメータや、動画用の `movie_prompt`、`video_length`、`fps` も列として
 編集可能です。
-デフォルト値は `temperature=0.7`、`max_tokens=4096`、`top_p=0.95`、`cfg=7`、`steps=28`、`seed=1234`、`batch_count=1`、`width=1024`、`height=1024`
+デフォルト値は `temperature=0.7`、`max_tokens=4096`、`top_p=0.95`、`cfg=7`、`steps=28`、`seed=1234`、`batch_count=1`、`width=1024`、`height=1024`、`video_length=0`、`fps=24`
 です。`seed` 欄を空欄にすると、画像生成時に毎回ランダムなシード値が送られ
 ます。`-1` を入力した場合はその値をそのまま API へ渡し、ComfyUI 側でランダム
 シードが採用されます。`batch_count` を空欄にすると 1 枚だけ生成します。
@@ -73,3 +73,4 @@ python demo_gradio.py --port 8001
 Streamlit UI でフレーム画像を用意した行を選択し、画面下部の **Generate videos** ボ
 タンを押すと `vids/<id>_<slug>/video_raw.mp4` が生成されます。フレームパックサーバ
 ーが起動している必要があります。
+ここで `fps` 列の値がフレームパックへ渡され、指定されたフレームレートで動画が生成されます。`movie_prompt` と `video_length` は後段の編集工程で利用される予定です。
