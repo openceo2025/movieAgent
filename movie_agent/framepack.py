@@ -6,6 +6,7 @@ from gradio_client import Client, handle_file
 FRAMEPACK_HOST = os.getenv("FRAMEPACK_HOST", "127.0.0.1")
 FRAMEPACK_PORT = os.getenv("FRAMEPACK_PORT", "8001")
 FRAMEPACK_API_NAME = os.getenv("FRAMEPACK_API_NAME", "/validate_and_process")
+FRAMEPACK_FN_INDEX = int(os.getenv("FRAMEPACK_FN_INDEX", "1"))
 
 
 def generate_video(
@@ -105,7 +106,7 @@ def generate_video(
                     print("[DEBUG] framepack retry error:", e2)
         try:
             if debug:
-                print("[DEBUG] retrying with fn_index=0")
+                print(f"[DEBUG] retrying with fn_index={FRAMEPACK_FN_INDEX}")
             result = client.predict(
                 img_param,
                 prompt,
@@ -120,7 +121,7 @@ def generate_video(
                 gpu_memory_preservation,
                 use_teacache,
                 mp4_crf,
-                fn_index=0,
+                fn_index=FRAMEPACK_FN_INDEX,
             )
             if debug:
                 print("[DEBUG] framepack response:", result)
@@ -136,4 +137,5 @@ __all__ = [
     "FRAMEPACK_HOST",
     "FRAMEPACK_PORT",
     "FRAMEPACK_API_NAME",
+    "FRAMEPACK_FN_INDEX",
 ]

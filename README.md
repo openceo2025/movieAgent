@@ -73,9 +73,11 @@ python demo_gradio.py --port 8001
 
 フレームパックの API エンドポイントは `/validate_and_process` が標準です。
 必要に応じて `FRAMEPACK_API_NAME` 環境変数で変更できます。旧バージョンでは
-`/predict` が使われている場合があります。本アプリではまず
+`/predict` や `/generate` が使われている場合があります。本アプリではまず
 `/validate_and_process` を呼び出し、失敗した場合は自動的に `/predict`
-へフォールバックします。
+へフォールバックし、それも失敗した場合は `fn_index` を指定して呼び出します。
+利用したい `fn_index` は `FRAMEPACK_FN_INDEX` 環境変数で設定でき、
+デフォルトは `1` です。
 
 API が受け取る主な引数は次の 13 個です。
 

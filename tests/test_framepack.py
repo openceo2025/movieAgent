@@ -22,6 +22,8 @@ def test_generate_video(monkeypatch):
     monkeypatch.setattr(framepack, 'FRAMEPACK_HOST', '1.2.3.4')
     monkeypatch.setattr(framepack, 'FRAMEPACK_PORT', '1234')
     monkeypatch.setattr(framepack, 'FRAMEPACK_API_NAME', '/validate_and_process')
+    monkeypatch.setattr(framepack, 'FRAMEPACK_FN_INDEX', 1)
+    monkeypatch.setattr(framepack, 'FRAMEPACK_FN_INDEX', 1)
 
     result = framepack.generate_video(
         'start.png',
@@ -80,7 +82,7 @@ def test_generate_video_debug(monkeypatch, capsys):
     monkeypatch.setattr(framepack, 'FRAMEPACK_HOST', '1.2.3.4')
     monkeypatch.setattr(framepack, 'FRAMEPACK_PORT', '1234')
     monkeypatch.setattr(framepack, 'FRAMEPACK_API_NAME', '/validate_and_process')
-
+    monkeypatch.setattr(framepack, 'FRAMEPACK_FN_INDEX', 1)
     result = framepack.generate_video(
         'start.png',
         prompt='p',
@@ -126,7 +128,7 @@ def test_generate_video_fallback(monkeypatch):
     monkeypatch.setattr(framepack, 'FRAMEPACK_HOST', '1.2.3.4')
     monkeypatch.setattr(framepack, 'FRAMEPACK_PORT', '1234')
     monkeypatch.setattr(framepack, 'FRAMEPACK_API_NAME', '/validate_and_process')
-
+    monkeypatch.setattr(framepack, 'FRAMEPACK_FN_INDEX', 1)
     result = framepack.generate_video(
         'start.png',
         prompt='p',
@@ -162,7 +164,7 @@ def test_generate_video_fallback_fn_index(monkeypatch):
     monkeypatch.setattr(framepack, 'FRAMEPACK_HOST', '1.2.3.4')
     monkeypatch.setattr(framepack, 'FRAMEPACK_PORT', '1234')
     monkeypatch.setattr(framepack, 'FRAMEPACK_API_NAME', '/validate_and_process')
-
+    monkeypatch.setattr(framepack, 'FRAMEPACK_FN_INDEX', 1)
     result = framepack.generate_video(
         'start.png',
         prompt='p',
@@ -179,4 +181,4 @@ def test_generate_video_fallback_fn_index(monkeypatch):
     )
 
     assert result is None
-    assert calls == ['/validate_and_process', '/predict', 0]
+    assert calls == ['/validate_and_process', '/predict', 1]
