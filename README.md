@@ -71,6 +71,11 @@ python demo_gradio.py --port 8001
 サーバーのホスト名とポートは `FRAMEPACK_HOST`、`FRAMEPACK_PORT` 環境変数で変更でき
 ます。未設定時はそれぞれ `127.0.0.1` と `8001` が使われます。
 
+フレームパックの API エンドポイントは `/validate_and_process` が標準です。
+必要に応じて `FRAMEPACK_API_NAME` 環境変数で変更できます。旧エンドポイント
+`/predict` を指定すると `Cannot find a function with api_name` というエラーに
+なるため注意してください。
+
 ## 動画生成の例
 
 Streamlit UI でフレーム画像を用意した行を選択し、画面下部の **Generate videos** ボ
