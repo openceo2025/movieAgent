@@ -74,7 +74,11 @@ def test_generate_videos_debug_message(monkeypatch, capsys, tmp_path):
     if fake_st.button("Generate videos", disabled=generate_disabled):
         if gui.DEBUG_MODE:
             print("[DEBUG] Generate videos button clicked")
+            print(f"[DEBUG] {int(selected_rows.sum())} rows selected")
 
     out = capsys.readouterr().out.strip().splitlines()
-    assert out == ["[DEBUG] Generate videos button clicked"]
+    assert out == [
+        "[DEBUG] Generate videos button clicked",
+        "[DEBUG] 1 rows selected",
+    ]
 
