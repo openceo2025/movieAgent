@@ -23,12 +23,34 @@ def generate_video(
     mp4_crf: int,
     debug: bool = False,
 ) -> Optional[str]:
-    """Generate a video using the local framepack server."""
+    """Generate a video using the local framepack server.
+
+    When ``debug`` is ``True`` the request URL and parameters along with the
+    response are printed.
+    """
 
     url = f"http://{FRAMEPACK_HOST}:{FRAMEPACK_PORT}/"
     client = Client(url)
 
     img_param = handle_file(image)
+
+    if debug:
+        print("[DEBUG] framepack url:", f"{url}{FRAMEPACK_API_NAME}")
+        print(
+            "[DEBUG] framepack params:",
+            {
+                "image": image,
+                "seed": seed,
+                "video_length": video_length,
+                "latent_window_size": latent_window_size,
+                "steps": steps,
+                "cfg": cfg,
+                "gs": gs,
+                "rs": rs,
+                "gpu_memory_preservation": gpu_memory_preservation,
+                "mp4_crf": mp4_crf,
+            },
+        )
 
     try:
         result = client.predict(
