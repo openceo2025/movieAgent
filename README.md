@@ -72,9 +72,11 @@ python demo_gradio.py --port 8001
 ます。未設定時はそれぞれ `127.0.0.1` と `8001` が使われます。
 
 フレームパックの API エンドポイントは `/validate_and_process` が標準です。
-必要に応じて `FRAMEPACK_API_NAME` 環境変数で変更できます。旧エンドポイント
-`/predict` を指定すると `Cannot find a function with api_name` というエラーに
-なるため注意してください。
+必要に応じて `FRAMEPACK_API_NAME` 環境変数で変更できます。旧バージョンでは
+`/predict` が使われている場合があり、そのままでは
+`Cannot find a function with api_name` というエラーになります。
+本アプリは `/validate_and_process` が見つからない場合、自動的に `/predict`
+へフォールバックします。
 
 API が受け取る主な引数は次の 13 個です。
 
