@@ -76,6 +76,49 @@ python demo_gradio.py --port 8001
 `/predict` を指定すると `Cannot find a function with api_name` というエラーに
 なるため注意してください。
 
+API が受け取る主な引数は次の 13 個です。
+
+1. `image` – 開始フレーム画像
+2. `prompt` – 生成プロンプト
+3. `n_prompt` – ネガティブプロンプト
+4. `seed`
+5. `video_length` – 動画の秒数
+6. `latent_window_size`
+7. `steps`
+8. `cfg`
+9. `gs`
+10. `rs`
+11. `gpu_memory_preservation`
+12. `use_teacache`
+13. `mp4_crf`
+
+デフォルトの `demo_gradio.py` はこれらすべての値が渡されることを前提としており、
+フレーム画像のディレクトリだけを送る形では動作しません。
+
+例として Python から直接呼び出す場合は次のようになります。
+
+```python
+from gradio_client import Client, handle_file
+
+client = Client("http://127.0.0.1:8001/")
+result = client.predict(
+    handle_file("start.png"),
+    "prompt text",
+    "",  # n_prompt
+    0,
+    2.0,
+    9,
+    25,
+    1.0,
+    10.0,
+    0.0,
+    6.0,
+    True,
+    16,
+    api_name="/validate_and_process",
+)
+```
+
 ## 動画生成の例
 
 Streamlit UI でフレーム画像を用意した行を選択し、画面下部の **Generate videos** ボ
