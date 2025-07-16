@@ -192,10 +192,17 @@ def main() -> None:
         key="video_editor",
     )
     new_df = edited_df.copy()
+    # Ensure the selected column exists and is boolean
+    if "selected" not in new_df:
+        new_df["selected"] = False
+    new_df["selected"] = new_df["selected"].fillna(False).astype(bool)
+
     if "controlnet_image" in st.session_state.video_df.columns:
         new_df["controlnet_image"] = st.session_state.video_df[
             "controlnet_image"
         ].reindex(new_df.index, fill_value="")
+
+    # Assign sanitized DataFrame back to session state
     st.session_state.video_df = new_df[st.session_state.video_df.columns]
     if st.session_state.autosave and not st.session_state.video_df.equals(
         st.session_state.last_saved_df
@@ -204,7 +211,9 @@ def main() -> None:
         st.session_state.last_saved_df = st.session_state.video_df.copy()
         st.info("Auto-saved to CSV")
 
-    selected_rows = st.session_state.video_df["selected"]
+    selected_rows = (
+        st.session_state.video_df["selected"].fillna(False).astype(bool)
+    )
     generate_disabled = not selected_rows.any()
 
     if st.button("Generate story prompts", disabled=generate_disabled):
