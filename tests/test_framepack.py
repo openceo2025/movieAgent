@@ -103,4 +103,6 @@ def test_generate_video_debug(monkeypatch, capsys):
     assert out[0] == '[DEBUG] framepack url: http://1.2.3.4:1234//validate_and_process'
     assert out[1].startswith('[DEBUG] framepack params:')
     assert "'mp4_crf': 9" in out[1]
+    assert "'prompt': 'p'" in out[1]
+    assert "'use_teacache': True" in out[1]
     assert out[2] == '[DEBUG] framepack response: result-data'

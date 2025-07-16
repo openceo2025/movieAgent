@@ -40,6 +40,7 @@ def generate_video(
             "[DEBUG] framepack params:",
             {
                 "image": image,
+                "prompt": prompt,
                 "seed": seed,
                 "video_length": video_length,
                 "latent_window_size": latent_window_size,
@@ -48,6 +49,7 @@ def generate_video(
                 "gs": gs,
                 "rs": rs,
                 "gpu_memory_preservation": gpu_memory_preservation,
+                "use_teacache": use_teacache,
                 "mp4_crf": mp4_crf,
             },
         )
