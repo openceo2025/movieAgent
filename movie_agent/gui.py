@@ -367,6 +367,7 @@ def main() -> None:
     if st.button("Generate videos", disabled=generate_disabled):
         if DEBUG_MODE:
             print("[DEBUG] Generate videos button clicked")
+            print(f"[DEBUG] {int(selected_rows.sum())} rows selected")
         df = st.session_state.video_df.copy()
         for idx, row in df[selected_rows].iterrows():
             title = row.get("title", "")
@@ -376,12 +377,24 @@ def main() -> None:
                 f"{row.get('id', idx)}_{slugify(title)}",
             )
             panels_dir = os.path.join(base_folder, "panels")
+            if DEBUG_MODE:
+                print(
+                    f"[DEBUG] Processing row {row.get('id', idx)}; panels_dir: {panels_dir}"
+                )
 
             images = sorted(Path(panels_dir).glob("*.png"))
             if not images:
+                if DEBUG_MODE:
+                    print(
+                        f"[DEBUG] No panels found for row {row.get('id', idx)} in {panels_dir}"
+                    )
                 st.warning(f"No panels found for row {row.get('id', idx)}")
                 continue
             start_image = str(images[0])
+            if DEBUG_MODE:
+                print(
+                    f"[DEBUG] Found {len(images)} images, start image: {start_image}"
+                )
 
             fps_val = row.get("fps", DEFAULT_FPS)
             if pd.isna(fps_val) or str(fps_val).strip() == "":
@@ -431,6 +444,8 @@ def main() -> None:
                 "mp4_crf": DEFAULT_MP4_CRF,
             }
             log_to_console(request_data)
+            if DEBUG_MODE:
+                print("[DEBUG] request_data:", request_data)
 
             result = framepack.generate_video(
                 start_image,
@@ -447,6 +462,11 @@ def main() -> None:
                 mp4_crf=DEFAULT_MP4_CRF,
                 debug=DEBUG_MODE,
             )
+            if DEBUG_MODE:
+                if result:
+                    print(f"[DEBUG] framepack.generate_video returned: {result}")
+                else:
+                    print("[DEBUG] framepack.generate_video returned None")
             if result:
                 st.success(f"Video saved to {out_path}")
             else:
