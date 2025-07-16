@@ -57,3 +57,50 @@ def test_generate_video(monkeypatch):
         9,
     )
     assert calls['api_name'] == framepack.FRAMEPACK_API_NAME
+
+
+def test_generate_video_debug(monkeypatch, capsys):
+    calls = {}
+
+    class DummyClient:
+        def __init__(self, url):
+            calls['url'] = url
+
+        def predict(self, *args, api_name=None):
+            calls['args'] = args
+            calls['api_name'] = api_name
+            return 'result-data'
+
+    def fake_handle_file(path):
+        calls['handled'] = path
+        return {'path': path}
+
+    monkeypatch.setattr(framepack, 'Client', DummyClient)
+    monkeypatch.setattr(framepack, 'handle_file', fake_handle_file)
+    monkeypatch.setattr(framepack, 'FRAMEPACK_HOST', '1.2.3.4')
+    monkeypatch.setattr(framepack, 'FRAMEPACK_PORT', '1234')
+    monkeypatch.setattr(framepack, 'FRAMEPACK_API_NAME', '/validate_and_process')
+
+    result = framepack.generate_video(
+        'start.png',
+        prompt='p',
+        seed=1,
+        video_length=2,
+        latent_window_size=3,
+        steps=4,
+        cfg=5.0,
+        gs=6.0,
+        rs=7.0,
+        gpu_memory_preservation=8.0,
+        use_teacache=True,
+        mp4_crf=9,
+        debug=True,
+    )
+
+    out = capsys.readouterr().out.strip().splitlines()
+
+    assert result == 'result-data'
+    assert out[0] == '[DEBUG] framepack url: http://1.2.3.4:1234//validate_and_process'
+    assert out[1].startswith('[DEBUG] framepack params:')
+    assert "'mp4_crf': 9" in out[1]
+    assert out[2] == '[DEBUG] framepack response: result-data'
