@@ -10,6 +10,8 @@ from movie_agent.csv_manager import (
     DEFAULT_TEMPERATURE,
     DEFAULT_CFG,
     DEFAULT_STEPS,
+    DEFAULT_FPS,
+    DEFAULT_VIDEO_LENGTH,
 )
 
 
@@ -18,6 +20,10 @@ def test_load_data_missing(tmp_path):
     df = load_data(path)
     assert df.empty
     assert "title" in df.columns
+    # newly added columns should exist with defaults
+    assert "movie_prompt" in df.columns
+    assert "video_length" in df.columns
+    assert "fps" in df.columns
 
 
 def test_save_data(tmp_path):
@@ -58,3 +64,7 @@ def test_load_data_defaults_existing_file(tmp_path):
     assert loaded.loc[0, "steps"] == DEFAULT_STEPS
     # selected column should default to False
     assert bool(loaded.loc[0, "selected"]) is False
+    # new columns should have their defaults
+    assert loaded.loc[0, "video_length"] == DEFAULT_VIDEO_LENGTH
+    assert loaded.loc[0, "fps"] == DEFAULT_FPS
+    assert loaded.loc[0, "movie_prompt"] == ""
