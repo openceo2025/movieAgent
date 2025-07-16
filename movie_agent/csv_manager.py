@@ -12,6 +12,8 @@ DEFAULT_TOP_P = 0.95
 DEFAULT_SEED = 1234
 DEFAULT_WIDTH = 1024
 DEFAULT_HEIGHT = 1024
+DEFAULT_FPS = 24
+DEFAULT_VIDEO_LENGTH = 0
 
 
 def slugify(text: str) -> str:
@@ -60,6 +62,9 @@ def load_data(path: str) -> pd.DataFrame:
         "bgm_prompt",
         "taste_prompt",
         "character_voice",
+        "movie_prompt",
+        "video_length",
+        "fps",
         "status",
         "needs_approve",
         "controlnet_image",
@@ -83,6 +88,9 @@ def load_data(path: str) -> pd.DataFrame:
         df["batch_count"] = 1
         df["width"] = DEFAULT_WIDTH
         df["height"] = DEFAULT_HEIGHT
+        df["movie_prompt"] = ""
+        df["video_length"] = DEFAULT_VIDEO_LENGTH
+        df["fps"] = DEFAULT_FPS
         df["controlnet_image"] = ""
     else:
         missing_cols = [c for c in columns if c not in df.columns]
@@ -119,12 +127,21 @@ def load_data(path: str) -> pd.DataFrame:
             df["width"] = DEFAULT_WIDTH
         if "height" in missing_cols:
             df["height"] = DEFAULT_HEIGHT
+        if "movie_prompt" in missing_cols:
+            df["movie_prompt"] = ""
+        if "video_length" in missing_cols:
+            df["video_length"] = DEFAULT_VIDEO_LENGTH
+        if "fps" in missing_cols:
+            df["fps"] = DEFAULT_FPS
         if "controlnet_image" in missing_cols:
             df["controlnet_image"] = ""
         df = df[columns]
         df["selected"] = df["selected"].fillna(False).astype(bool)
         df["id"] = df["id"].astype(str)
         df["controlnet_image"] = df["controlnet_image"].fillna("").astype(str)
+        df["movie_prompt"] = df["movie_prompt"].fillna("").astype(str)
+        df["video_length"] = pd.to_numeric(df["video_length"], errors="coerce").fillna(DEFAULT_VIDEO_LENGTH).astype(int)
+        df["fps"] = pd.to_numeric(df["fps"], errors="coerce").fillna(DEFAULT_FPS).astype(int)
     return df
 
 
