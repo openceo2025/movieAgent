@@ -10,6 +10,7 @@ from .comfyui import (
     DEFAULT_CFG,
     DEFAULT_STEPS,
 )
+from . import framepack
 from .ollama import list_ollama_models, generate_story_prompt, DEBUG_MODE
 from .csv_manager import (
     load_data,
@@ -18,6 +19,7 @@ from .csv_manager import (
     unique_path,
     DEFAULT_WIDTH,
     DEFAULT_HEIGHT,
+    DEFAULT_FPS,
 )
 
 # Parse CLI arguments passed after `--` when launching via Streamlit
@@ -172,6 +174,17 @@ def main() -> None:
                 min_value=64,
                 step=64,
             ),
+            "movie_prompt": st.column_config.TextColumn("Movie Prompt"),
+            "video_length": st.column_config.NumberColumn(
+                "Length (s)",
+                min_value=0,
+                step=1,
+            ),
+            "fps": st.column_config.NumberColumn(
+                "FPS",
+                min_value=1,
+                step=1,
+            ),
         },
         num_rows="dynamic",
         hide_index=True,
@@ -321,6 +334,39 @@ def main() -> None:
         save_data(df, CSV_FILE)
         st.session_state.last_saved_df = df.copy()
         rerun_with_message("Page reloaded after generating images")
+
+    if st.button("Generate videos", disabled=generate_disabled):
+        df = st.session_state.video_df.copy()
+        for idx, row in df[selected_rows].iterrows():
+            title = row.get("title", "")
+            base_folder = os.path.join(
+                BASE_DIR,
+                "vids",
+                f"{row.get('id', idx)}_{slugify(title)}",
+            )
+            panels_dir = os.path.join(base_folder, "panels")
+            fps_val = row.get("fps", DEFAULT_FPS)
+            if pd.isna(fps_val) or str(fps_val).strip() == "":
+                fps_val = DEFAULT_FPS
+            fps_val = int(fps_val)
+            os.makedirs(base_folder, exist_ok=True)
+            out_path = os.path.join(base_folder, "video_raw.mp4")
+            result = framepack.generate_video(
+                panels_dir,
+                fps=fps_val,
+                output=out_path,
+                debug=DEBUG_MODE,
+            )
+            if result:
+                st.success(f"Video saved to {out_path}")
+            else:
+                st.error(
+                    f"Failed to generate video for row {row.get('id', idx)}"
+                )
+        st.session_state.video_df = df
+        save_data(df, CSV_FILE)
+        st.session_state.last_saved_df = df.copy()
+        rerun_with_message("Page reloaded after generating videos")
 
     save_col, auto_col = st.columns([1, 1])
     auto_col.checkbox(
