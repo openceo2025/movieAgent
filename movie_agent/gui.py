@@ -43,6 +43,16 @@ DEFAULT_MAX_TOKENS = 4096
 DEFAULT_TOP_P = 0.95
 DEFAULT_SEED = 1234
 
+# FramePack default parameters
+DEFAULT_LATENT_WINDOW_SIZE = 9
+DEFAULT_FP_STEPS = 25
+DEFAULT_FP_CFG = 1.0
+DEFAULT_GS = 10.0
+DEFAULT_RS = 0.0
+DEFAULT_GPU_MEMORY_PRESERVATION = 6.0
+DEFAULT_USE_TEACACHE = True
+DEFAULT_MP4_CRF = 16
+
 
 st.set_page_config(page_title="Video Agent", layout="wide")
 
@@ -354,16 +364,58 @@ def main() -> None:
                 f"{row.get('id', idx)}_{slugify(title)}",
             )
             panels_dir = os.path.join(base_folder, "panels")
+
+            images = sorted(Path(panels_dir).glob("*.png"))
+            if not images:
+                st.warning(f"No panels found for row {row.get('id', idx)}")
+                continue
+            start_image = str(images[0])
+
             fps_val = row.get("fps", DEFAULT_FPS)
             if pd.isna(fps_val) or str(fps_val).strip() == "":
                 fps_val = DEFAULT_FPS
             fps_val = int(fps_val)
+
+            movie_prompt = row.get("movie_prompt", "")
+            if pd.isna(movie_prompt):
+                movie_prompt = ""
+
+            video_length_val = row.get("video_length", DEFAULT_VIDEO_LENGTH)
+            if pd.isna(video_length_val) or str(video_length_val).strip() == "":
+                video_length_val = DEFAULT_VIDEO_LENGTH
+            video_length_val = float(video_length_val)
+
+            seed_val = row.get("seed", DEFAULT_SEED)
+            if pd.isna(seed_val) or str(seed_val).strip() == "":
+                seed_val = DEFAULT_SEED
+            seed_val = int(seed_val)
+
+            cfg_val = row.get("cfg", DEFAULT_FP_CFG)
+            if pd.isna(cfg_val) or str(cfg_val).strip() == "":
+                cfg_val = DEFAULT_FP_CFG
+            cfg_val = float(cfg_val)
+
+            steps_val = row.get("steps", DEFAULT_FP_STEPS)
+            if pd.isna(steps_val) or str(steps_val).strip() == "":
+                steps_val = DEFAULT_FP_STEPS
+            steps_val = int(steps_val)
+
             os.makedirs(base_folder, exist_ok=True)
             out_path = os.path.join(base_folder, "video_raw.mp4")
+
             result = framepack.generate_video(
-                panels_dir,
-                fps=fps_val,
-                output=out_path,
+                start_image,
+                prompt=movie_prompt,
+                seed=seed_val,
+                video_length=video_length_val,
+                latent_window_size=DEFAULT_LATENT_WINDOW_SIZE,
+                steps=steps_val,
+                cfg=cfg_val,
+                gs=DEFAULT_GS,
+                rs=DEFAULT_RS,
+                gpu_memory_preservation=DEFAULT_GPU_MEMORY_PRESERVATION,
+                use_teacache=DEFAULT_USE_TEACACHE,
+                mp4_crf=DEFAULT_MP4_CRF,
                 debug=DEBUG_MODE,
             )
             if result:
