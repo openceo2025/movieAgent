@@ -5,6 +5,7 @@ from gradio_client import Client
 
 FRAMEPACK_HOST = os.getenv("FRAMEPACK_HOST", "127.0.0.1")
 FRAMEPACK_PORT = os.getenv("FRAMEPACK_PORT", "8001")
+FRAMEPACK_API_NAME = os.getenv("FRAMEPACK_API_NAME", "/validate_and_process")
 
 
 def generate_video(
@@ -17,7 +18,7 @@ def generate_video(
     url = f"http://{FRAMEPACK_HOST}:{FRAMEPACK_PORT}/"
     client = Client(url)
     try:
-        result = client.predict(frames_dir, fps, output, api_name="/predict")
+        result = client.predict(frames_dir, fps, output, api_name=FRAMEPACK_API_NAME)
         if debug:
             print("[DEBUG] framepack response:", result)
         return result
@@ -27,4 +28,9 @@ def generate_video(
         return None
 
 
-__all__ = ["generate_video", "FRAMEPACK_HOST", "FRAMEPACK_PORT"]
+__all__ = [
+    "generate_video",
+    "FRAMEPACK_HOST",
+    "FRAMEPACK_PORT",
+    "FRAMEPACK_API_NAME",
+]
