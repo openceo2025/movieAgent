@@ -118,7 +118,7 @@ def test_generate_video_fallback(monkeypatch):
         def predict(self, *args, api_name=None):
             calls.append(api_name)
             if api_name == '/validate_and_process':
-                raise Exception('Cannot find a function with `api_name`: /validate_and_process.')
+                raise Exception('fail')
             return 'ok'
 
     monkeypatch.setattr(framepack, 'Client', DummyClient)

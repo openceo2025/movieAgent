@@ -77,10 +77,7 @@ def generate_video(
     except Exception as e:
         if debug:
             print("[DEBUG] framepack error:", e)
-        if (
-            "Cannot find a function with `api_name`" in str(e)
-            and FRAMEPACK_API_NAME != "/predict"
-        ):
+        if FRAMEPACK_API_NAME != "/predict":
             try:
                 if debug:
                     print("[DEBUG] retrying with /predict")
