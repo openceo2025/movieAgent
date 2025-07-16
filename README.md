@@ -14,12 +14,15 @@ conda activate movieagent
 
 ## UI の起動方法
 
-Windows 環境では付属の `start_movie_agent.bat` を実行してください。この
-スクリプトは事前に `movieagent` conda 環境がアクティブであることを前提に、
-デバッグモードで Streamlit を起動します。
+Windows 環境では付属の `start_movie_agent.bat` を実行してください。仮想環境
+が存在しない場合は自動的に作成してから Streamlit を起動します。`movieagent`
+conda 環境を利用している場合は、`start_movie_agent_conda.bat` を使用すると
+`conda activate movieagent` を実行した後に同様の方法で UI を起動できます。
 
 ```bash
 start_movie_agent.bat
+REM または conda 環境用
+start_movie_agent_conda.bat
 ```
 
 実行後、ブラウザで [http://localhost:8501](http://localhost:8501) を開くと UI が表示されます。
