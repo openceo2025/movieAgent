@@ -1,9 +1,11 @@
 import argparse
+import json
 import streamlit as st
 import pandas as pd
 import os
 import random
 from pathlib import Path
+from streamlit.components.v1 import html as component_html
 from .comfyui import (
     list_comfy_models,
     generate_image,
@@ -55,6 +57,14 @@ DEFAULT_MP4_CRF = 16
 
 
 st.set_page_config(page_title="Video Agent", layout="wide")
+
+
+def log_to_console(data: dict) -> None:
+    """Send JSON data to the browser console."""
+    component_html(
+        f"<script>console.log('FramePack request:', {json.dumps(data)});</script>",
+        height=0,
+    )
 
 
 def rerun_with_message(message: str) -> None:
@@ -402,6 +412,23 @@ def main() -> None:
 
             os.makedirs(base_folder, exist_ok=True)
             out_path = os.path.join(base_folder, "video_raw.mp4")
+
+            request_data = {
+                "start_image": start_image,
+                "movie_prompt": movie_prompt,
+                "seed": seed_val,
+                "video_length": video_length_val,
+                "fps": fps_val,
+                "cfg": cfg_val,
+                "steps": steps_val,
+                "latent_window_size": DEFAULT_LATENT_WINDOW_SIZE,
+                "gs": DEFAULT_GS,
+                "rs": DEFAULT_RS,
+                "gpu_memory_preservation": DEFAULT_GPU_MEMORY_PRESERVATION,
+                "use_teacache": DEFAULT_USE_TEACACHE,
+                "mp4_crf": DEFAULT_MP4_CRF,
+            }
+            log_to_console(request_data)
 
             result = framepack.generate_video(
                 start_image,
