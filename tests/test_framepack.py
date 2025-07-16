@@ -16,11 +16,11 @@ def test_generate_video(monkeypatch):
     monkeypatch.setattr(framepack, 'Client', DummyClient)
     monkeypatch.setattr(framepack, 'FRAMEPACK_HOST', '1.2.3.4')
     monkeypatch.setattr(framepack, 'FRAMEPACK_PORT', '1234')
-    monkeypatch.setattr(framepack, 'FRAMEPACK_API_NAME', '/api')
+    monkeypatch.setattr(framepack, 'FRAMEPACK_API_NAME', '/validate_and_process')
 
     result = framepack.generate_video('frames', fps=30, output='out.mp4')
 
     assert result == 'result-data'
     assert calls['url'] == 'http://1.2.3.4:1234/'
     assert calls['args'] == ('frames', 30, 'out.mp4')
-    assert calls['api_name'] == '/api'
+    assert calls['api_name'] == framepack.FRAMEPACK_API_NAME
