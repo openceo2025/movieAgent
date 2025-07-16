@@ -15,11 +15,12 @@ pip install -r requirements.txt
 
 ## UI の起動方法
 
+Windows 環境では付属の `start_movie_agent.bat` を実行してください。仮想環境の
+作成と依存関係のインストールを行った後、デバッグモードで Streamlit を起動しま
+す。
+
 ```bash
-# 通常起動
-streamlit run movie_agent/app.py
-# デバッグ表示を有効化する場合
-streamlit run movie_agent/app.py -- --debug
+start_movie_agent.bat
 ```
 
 実行後、ブラウザで [http://localhost:8501](http://localhost:8501) を開くと UI が表示されます。
