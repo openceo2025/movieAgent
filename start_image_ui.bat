@@ -13,5 +13,8 @@ if not defined VIRTUAL_ENV (
     )
 )
 
+REM Set PYTHONPATH to project root
+set PYTHONPATH=%~dp0
+
 REM Launch Streamlit app with debug mode
 streamlit run movie_agent/image_ui.py -- --debug
