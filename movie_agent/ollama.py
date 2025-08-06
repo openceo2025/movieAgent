@@ -34,14 +34,14 @@ def list_ollama_models(debug: bool | None = None) -> list[str]:
     except Exception as e:
         if debug:
             print("[DEBUG] ollama list error:", e)
-        return ["phi3:mini"]
+        return ["gpt-oss:20b"]
     lines = result.stdout.strip().splitlines()
     models = []
     for line in lines[1:]:
         parts = line.split()
         if parts:
             models.append(parts[0])
-    return models or ["phi3:mini"]
+    return models or ["gpt-oss:20b"]
 
 
 def generate_story_prompt(
