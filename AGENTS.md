@@ -90,7 +90,31 @@ streamlit run movie_agent/app.py
 # -> ブラウザで http://localhost:8501/
 ```
 
-## 7. 今後の拡張アイデア
+## 7. 画像生成 & 自動投稿 UI
+
+`image_ui.py` は画像投稿用の Streamlit UI です。カテゴリ・タグ・NSFW フラグを管理し、日本語 `ja_prompt` を **Ollama** で英訳、**ComfyUI** で画像生成し、`autoPoster` API で自動投稿します。投稿後はビュー数を取得して記録できます。
+
+### 必須列
+`id`, `category`, `tags`, `nsfw`, `ja_prompt`, `image_prompt`, `image_path`, `post_url`, `views_yesterday`, `views_week`, `views_month` に加え、既存の LLM / 画像パラメータ列も利用可能です。
+
+### ボタン
+- **Prompt** – `ja_prompt` を英語 `image_prompt` へ変換  
+- **Generate** – ComfyUI で画像生成  
+- **Post** – autoPoster へ投稿  
+- **Analysis** – autoPoster から視聴数取得
+
+### 実行方法
+```
+streamlit run movie_agent/image_ui.py
+```
+
+### 環境変数の例
+- `OLLAMA_HOST` = Ollama API (例: http://localhost:11434)  
+- `COMFYUI_API_URL` = ComfyUI REST API (例: http://127.0.0.1:8188)  
+- `AUTOPOSTER_API_URL` = autoPoster サービス (例: http://127.0.0.1:9000)
+
+---
+## 8. 今後の拡張アイデア
 Stable Diffusion XL → ComfyUI に差し替え時のワークフロー自動切替
 
 Spreadsheet から Notion DB へ移行するコネクタ
