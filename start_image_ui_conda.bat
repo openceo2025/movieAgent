@@ -5,5 +5,8 @@ cd /d %~dp0
 REM Activate movieagent conda environment
 call conda activate movieagent
 
+REM Set PYTHONPATH to project root
+set PYTHONPATH=%~dp0
+
 REM Launch Streamlit app with debug mode
 streamlit run movie_agent/image_ui.py -- --debug
