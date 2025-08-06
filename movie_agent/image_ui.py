@@ -69,11 +69,12 @@ def main() -> None:
         ) = list_comfy_models()
 
     df = st.session_state.image_df
-    for col, options in [
-        ("llm_model", st.session_state.models),
-        ("checkpoint", st.session_state.comfy_models),
-        ("comfy_vae", st.session_state.comfy_vaes),
-    ]:
+    if "llm_model" not in df.columns:
+        idx = df.columns.get_loc("image_prompt") if "image_prompt" in df.columns else len(df.columns)
+        df.insert(idx, "llm_model", DEFAULT_MODEL)
+    else:
+        df["llm_model"] = df["llm_model"].fillna(DEFAULT_MODEL)
+    for col in ["checkpoint", "comfy_vae"]:
         if col not in df.columns:
             df[col] = ""
         else:
@@ -90,6 +91,10 @@ def main() -> None:
             "tags": st.column_config.TextColumn("Tags"),
             "nsfw": st.column_config.CheckboxColumn("NSFW"),
             "ja_prompt": st.column_config.TextColumn("Japanese Prompt"),
+            "llm_model": st.column_config.TextColumn(
+                "LLM Model",
+                validate=lambda m: (not m) or (m in st.session_state.models),
+            ),
             "image_prompt": st.column_config.TextColumn("Image Prompt"),
             "image_path": st.column_config.TextColumn("Image Path"),
             "post_url": st.column_config.TextColumn("Post URL"),
@@ -98,9 +103,6 @@ def main() -> None:
             ),
             "views_week": st.column_config.NumberColumn("Views Week", min_value=0),
             "views_month": st.column_config.NumberColumn("Views Month", min_value=0),
-            "llm_model": st.column_config.SelectboxColumn(
-                "LLM Model", options=st.session_state.models
-            ),
             "checkpoint": st.column_config.SelectboxColumn(
                 "Checkpoint", options=st.session_state.comfy_models
             ),
@@ -130,9 +132,12 @@ def main() -> None:
             if not row.get("image_prompt"):
                 if ja:
                     try:
+                        model = row.get("llm_model")
+                        if not model:
+                            model = DEFAULT_MODEL
                         prompt = generate_story_prompt(
                             ja,
-                            model=row.get("llm_model", DEFAULT_MODEL),
+                            model=model,
                             temperature=row.get("temperature", DEFAULT_TEMPERATURE),
                             max_tokens=row.get("max_tokens", DEFAULT_MAX_TOKENS),
                             top_p=row.get("top_p", DEFAULT_TOP_P),

@@ -5,7 +5,7 @@ import pandas as pd
 from .comfyui import DEFAULT_CFG, DEFAULT_STEPS
 
 # Default generation parameters used when initializing a new CSV
-DEFAULT_MODEL = "phi3:mini"
+DEFAULT_MODEL = "gpt-oss:20b"
 DEFAULT_TEMPERATURE = 0.7
 DEFAULT_MAX_TOKENS = 4096
 DEFAULT_TOP_P = 0.95
@@ -164,13 +164,13 @@ def load_image_data(path: str) -> pd.DataFrame:
         "tags",
         "nsfw",
         "ja_prompt",
+        "llm_model",
         "image_prompt",
         "image_path",
         "post_url",
         "views_yesterday",
         "views_week",
         "views_month",
-        "llm_model",
         "checkpoint",
         "comfy_vae",
         "comfy_lora",
@@ -195,13 +195,13 @@ def load_image_data(path: str) -> pd.DataFrame:
         df["tags"] = ""
         df["nsfw"] = False
         df["ja_prompt"] = ""
+        df["llm_model"] = DEFAULT_MODEL
         df["image_prompt"] = ""
         df["image_path"] = ""
         df["post_url"] = ""
         df["views_yesterday"] = 0
         df["views_week"] = 0
         df["views_month"] = 0
-        df["llm_model"] = DEFAULT_MODEL
         df["checkpoint"] = ""
         df["comfy_vae"] = ""
         df["comfy_lora"] = ""
@@ -251,6 +251,7 @@ def load_image_data(path: str) -> pd.DataFrame:
         df["category"] = df["category"].fillna("").astype(str)
         df["tags"] = df["tags"].fillna("").astype(str)
         df["ja_prompt"] = df["ja_prompt"].fillna("").astype(str)
+        df["llm_model"] = df["llm_model"].fillna(DEFAULT_MODEL).astype(str)
         df["image_prompt"] = df["image_prompt"].fillna("").astype(str)
         df["image_path"] = df["image_path"].fillna("").astype(str)
         df["post_url"] = df["post_url"].fillna("").astype(str)
