@@ -17,15 +17,22 @@ conda activate movieagent
 Windows 環境では付属の `start_movie_agent.bat` を実行してください。仮想環境
 が存在しない場合は自動的に作成してから Streamlit を起動します。`movieagent`
 conda 環境を利用している場合は、`start_movie_agent_conda.bat` を使用すると
-`conda activate movieagent` を実行した後に同様の方法で UI を起動できます。
+`conda activate movieagent` を実行した後に同様の方法で UI を起動できます。画像
+投稿用 UI を使う際は `start_image_ui.bat` または `start_image_ui_conda.bat` を
+実行してください。
 
 ```bash
 start_movie_agent.bat
 REM または conda 環境用
 start_movie_agent_conda.bat
+
+start_image_ui.bat
+REM 画像 UI を conda 環境で起動
+start_image_ui_conda.bat
 ```
 
-実行後、ブラウザで [http://localhost:8501](http://localhost:8501) を開くと UI が表示されます。
+実行後、いずれもデフォルトのブラウザで [http://localhost:8501](http://localhost:8501)
+を開くと UI が表示されます。
 
 
 動画リストは **Streamlit Data Editor** を利用しており、`num_rows="dynamic"`
