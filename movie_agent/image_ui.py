@@ -91,9 +91,8 @@ def main() -> None:
             "tags": st.column_config.TextColumn("Tags"),
             "nsfw": st.column_config.CheckboxColumn("NSFW"),
             "ja_prompt": st.column_config.TextColumn("Japanese Prompt"),
-            "llm_model": st.column_config.TextColumn(
-                "LLM Model",
-                validate=lambda m: (not m) or (m in st.session_state.models),
+            "llm_model": st.column_config.SelectboxColumn(
+                "LLM Model", options=st.session_state.models
             ),
             "image_prompt": st.column_config.TextColumn("Image Prompt"),
             "image_path": st.column_config.TextColumn("Image Path"),
