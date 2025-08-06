@@ -89,8 +89,8 @@ def main() -> None:
             "category": st.column_config.TextColumn("Category"),
             "tags": st.column_config.TextColumn("Tags"),
             "nsfw": st.column_config.CheckboxColumn("NSFW"),
-            "ja_prompt": st.column_config.TextAreaColumn("Japanese Prompt"),
-            "image_prompt": st.column_config.TextAreaColumn("Image Prompt"),
+            "ja_prompt": st.column_config.TextColumn("Japanese Prompt"),
+            "image_prompt": st.column_config.TextColumn("Image Prompt"),
             "image_path": st.column_config.TextColumn("Image Path"),
             "post_url": st.column_config.TextColumn("Post URL"),
             "views_yesterday": st.column_config.NumberColumn(
