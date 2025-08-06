@@ -138,12 +138,11 @@ Streamlit UI でフレーム画像を用意した行を選択し、画面下部�
 
 ## Image Generation & Auto-Posting UI
 
-This Streamlit UI manages image-centric posts. It lets you maintain category, tag, and NSFW prompts, translate them to English via **Ollama**, generate images with **ComfyUI**, automatically post them to a local **autoPoster** service, and fetch view statistics.
+This Streamlit UI manages image-centric posts and **uses the same Streamlit version as the video UI**, so no upgrade is required. It translates Japanese prompts via **Ollama**, renders images with **ComfyUI**, posts them through a local **autoPoster** service, and retrieves view statistics.
 
-### Required columns
-The sheet handled by this UI should include:
+### Column schema
+Include the following columns in your sheet:
 
-- `id`
 - `category`
 - `tags`
 - `nsfw`
@@ -155,23 +154,33 @@ The sheet handled by this UI should include:
 - `views_week`
 - `views_month`
 
-Existing LLM and image parameter columns (e.g. model, temperature, steps, seed, width, height, etc.) can also be used.
+Additional LLM or ComfyUI parameter columns (model, temperature, steps, seed, width, height, etc.) may also be added.
 
 ### Button actions
-- **Prompt** – use Ollama to convert `ja_prompt` to an English `image_prompt`.
-- **Generate** – call ComfyUI to create an image at `image_path`.
-- **Post** – upload the image via the local `autoPoster` API and store the `post_url`.
+- **Generate prompt** – use Ollama to convert `ja_prompt` into an English `image_prompt`.
+- **Generate images** – call ComfyUI to create an image saved at `image_path`.
+- **Post** – upload the image via the local `autoPoster` API and store the resulting `post_url`.
 - **Analysis** – query the `autoPoster` API to fill `views_yesterday`, `views_week`, and `views_month`.
 
 ### Running
-```bash
+On Windows you can launch the UI with the helper scripts:
+
+```
+start_image_ui.bat
+REM or, for a pre-existing conda environment:
+start_image_ui_conda.bat
+```
+
+These scripts ultimately run:
+
+```
 streamlit run movie_agent/image_ui.py
 ```
 
 ### Environment variables
-Set environment variables so the UI can reach local services:
+Set endpoints so the UI can reach local services:
 
-- `OLLAMA_HOST` – base URL of the Ollama API (default `http://localhost:11434`).
-- `COMFYUI_API_URL` – endpoint for the ComfyUI REST API (default `http://127.0.0.1:8188`).
-- `AUTOPOSTER_API_URL` – URL of the local autoPoster service for posting and analytics.
+- `OLLAMA_HOST` – base URL of the Ollama API (e.g. `http://localhost:11434`).
+- `COMFYUI_API_URL` – endpoint for the ComfyUI REST API (e.g. `http://127.0.0.1:8188`).
+- `AUTOPOSTER_API_URL` – URL of the local autoPoster service for posting and analytics (e.g. `http://127.0.0.1:9000`).
 
