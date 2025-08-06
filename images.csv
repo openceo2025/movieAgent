@@ -1,0 +1,1 @@
+id,category,tags,nsfw,ja_prompt,image_prompt,image_path,post_url,views_yesterday,views_week,views_month,llm_model,checkpoint,comfy_vae,comfy_lora,temperature,max_tokens,top_p,cfg,steps,seed,batch_count,width,height

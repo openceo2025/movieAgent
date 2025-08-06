@@ -149,3 +149,114 @@ def save_data(df: pd.DataFrame, path: str) -> None:
     """Save ``df`` to ``path`` dropping the ``selected`` column."""
     df_copy = df.drop(columns=["selected"], errors="ignore")
     df_copy.to_csv(path, index=False)
+
+
+def load_image_data(path: str) -> pd.DataFrame:
+    """Load image spreadsheet data from ``path``.
+
+    Creates a DataFrame with the expected columns when the file does not
+    exist. Missing columns are added with default values.
+    """
+    columns = [
+        "selected",
+        "id",
+        "category",
+        "tags",
+        "nsfw",
+        "ja_prompt",
+        "image_prompt",
+        "image_path",
+        "post_url",
+        "views_yesterday",
+        "views_week",
+        "views_month",
+        "llm_model",
+        "checkpoint",
+        "comfy_vae",
+        "comfy_lora",
+        "temperature",
+        "max_tokens",
+        "top_p",
+        "cfg",
+        "steps",
+        "seed",
+        "batch_count",
+        "width",
+        "height",
+    ]
+
+    try:
+        df = pd.read_csv(path)
+    except FileNotFoundError:
+        df = pd.DataFrame(columns=columns)
+        df["selected"] = False
+        df["id"] = ""
+        df["category"] = ""
+        df["tags"] = ""
+        df["nsfw"] = False
+        df["ja_prompt"] = ""
+        df["image_prompt"] = ""
+        df["image_path"] = ""
+        df["post_url"] = ""
+        df["views_yesterday"] = 0
+        df["views_week"] = 0
+        df["views_month"] = 0
+        df["llm_model"] = DEFAULT_MODEL
+        df["checkpoint"] = ""
+        df["comfy_vae"] = ""
+        df["comfy_lora"] = ""
+        df["temperature"] = DEFAULT_TEMPERATURE
+        df["max_tokens"] = DEFAULT_MAX_TOKENS
+        df["top_p"] = DEFAULT_TOP_P
+        df["cfg"] = DEFAULT_CFG
+        df["steps"] = DEFAULT_STEPS
+        df["seed"] = DEFAULT_SEED
+        df["batch_count"] = 1
+        df["width"] = DEFAULT_WIDTH
+        df["height"] = DEFAULT_HEIGHT
+    else:
+        missing_cols = [c for c in columns if c not in df.columns]
+        for c in missing_cols:
+            if c in ["selected", "nsfw"]:
+                df[c] = False
+            elif c in ["views_yesterday", "views_week", "views_month"]:
+                df[c] = 0
+            else:
+                df[c] = ""
+        if "llm_model" in missing_cols:
+            df["llm_model"] = DEFAULT_MODEL
+        if "temperature" in missing_cols:
+            df["temperature"] = DEFAULT_TEMPERATURE
+        if "max_tokens" in missing_cols:
+            df["max_tokens"] = DEFAULT_MAX_TOKENS
+        if "top_p" in missing_cols:
+            df["top_p"] = DEFAULT_TOP_P
+        if "cfg" in missing_cols:
+            df["cfg"] = DEFAULT_CFG
+        if "steps" in missing_cols:
+            df["steps"] = DEFAULT_STEPS
+        if "seed" in missing_cols:
+            df["seed"] = DEFAULT_SEED
+        if "batch_count" in missing_cols:
+            df["batch_count"] = 1
+        if "width" in missing_cols:
+            df["width"] = DEFAULT_WIDTH
+        if "height" in missing_cols:
+            df["height"] = DEFAULT_HEIGHT
+
+        df = df[columns]
+        df["selected"] = df["selected"].fillna(False).astype(bool)
+        df["nsfw"] = df["nsfw"].fillna(False).astype(bool)
+        df["id"] = df["id"].astype(str)
+        df["category"] = df["category"].fillna("").astype(str)
+        df["tags"] = df["tags"].fillna("").astype(str)
+        df["ja_prompt"] = df["ja_prompt"].fillna("").astype(str)
+        df["image_prompt"] = df["image_prompt"].fillna("").astype(str)
+        df["image_path"] = df["image_path"].fillna("").astype(str)
+        df["post_url"] = df["post_url"].fillna("").astype(str)
+        for vcol in ["views_yesterday", "views_week", "views_month"]:
+            df[vcol] = (
+                pd.to_numeric(df[vcol], errors="coerce").fillna(0).astype(int)
+            )
+    return df
+
