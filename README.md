@@ -128,3 +128,43 @@ Streamlit UI でフレーム画像を用意した行を選択し、画面下部�
 タンを押すと `vids/<id>_<slug>/video_raw.mp4` が生成されます。フレームパックサーバ
 ーが起動している必要があります。
 ここで `fps` 列の値がフレームパックへ渡され、指定されたフレームレートで動画が生成されます。`movie_prompt` と `video_length` は後段の編集工程で利用される予定です。
+
+## Image Generation & Auto-Posting UI
+
+This Streamlit UI manages image-centric posts. It lets you maintain category, tag, and NSFW prompts, translate them to English via **Ollama**, generate images with **ComfyUI**, automatically post them to a local **autoPoster** service, and fetch view statistics.
+
+### Required columns
+The sheet handled by this UI should include:
+
+- `id`
+- `category`
+- `tags`
+- `nsfw`
+- `ja_prompt`
+- `image_prompt`
+- `image_path`
+- `post_url`
+- `views_yesterday`
+- `views_week`
+- `views_month`
+
+Existing LLM and image parameter columns (e.g. model, temperature, steps, seed, width, height, etc.) can also be used.
+
+### Button actions
+- **Prompt** – use Ollama to convert `ja_prompt` to an English `image_prompt`.
+- **Generate** – call ComfyUI to create an image at `image_path`.
+- **Post** – upload the image via the local `autoPoster` API and store the `post_url`.
+- **Analysis** – query the `autoPoster` API to fill `views_yesterday`, `views_week`, and `views_month`.
+
+### Running
+```bash
+streamlit run movie_agent/image_ui.py
+```
+
+### Environment variables
+Set environment variables so the UI can reach local services:
+
+- `OLLAMA_HOST` – base URL of the Ollama API (default `http://localhost:11434`).
+- `COMFYUI_API_URL` – endpoint for the ComfyUI REST API (default `http://127.0.0.1:8188`).
+- `AUTOPOSTER_API_URL` – URL of the local autoPoster service for posting and analytics.
+
