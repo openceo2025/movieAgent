@@ -5,14 +5,18 @@ from pathlib import Path
 
 import requests
 import streamlit as st
-from .comfyui import (
+from movie_agent.comfyui import (
     list_comfy_models,
     generate_image,
     DEFAULT_CFG,
     DEFAULT_STEPS,
 )
-from .ollama import list_ollama_models, generate_story_prompt, DEBUG_MODE
-from .csv_manager import (
+from movie_agent.ollama import (
+    list_ollama_models,
+    generate_story_prompt,
+    DEBUG_MODE,
+)
+from movie_agent.csv_manager import (
     load_image_data,
     save_data,
     slugify,
