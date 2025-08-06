@@ -147,6 +147,7 @@ Include the following columns in your sheet:
 - `tags`
 - `nsfw`
 - `ja_prompt`
+- `llm_model`
 - `image_prompt`
 - `image_path`
 - `post_url`
@@ -154,6 +155,8 @@ Include the following columns in your sheet:
 - `views_week`
 - `views_month`
 
+`llm_model` selects the Ollama model used when translating `ja_prompt` into English.
+Place this column before `image_prompt`; the default model is `gpt-oss:20b`.
 Additional LLM or ComfyUI parameter columns (model, temperature, steps, seed, width, height, etc.) may also be added.
 
 ### Button actions
