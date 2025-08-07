@@ -4,6 +4,7 @@ from datetime import datetime
 from pathlib import Path
 
 import base64
+import random
 from typing import Optional
 
 import requests
@@ -224,7 +225,7 @@ def main() -> None:
                 "VAE", options=st.session_state.comfy_vaes
             ),
             "steps": st.column_config.NumberColumn("Steps", min_value=1),
-            "seed": st.column_config.NumberColumn("Seed", min_value=0),
+            "seed": st.column_config.NumberColumn("Seed", min_value=-1),
             "batch_count": st.column_config.NumberColumn(
                 "Batch", min_value=1, max_value=10
             ),
@@ -316,9 +317,10 @@ def main() -> None:
                     continue
             vae = row.get("comfy_vae") or ""
             row_id = row.get("id", idx)
-            seed_val = coerce_int(
-                row.get("seed"), DEFAULT_SEED, "seed", row_id, min_value=0
-            )
+            seed = row.get("seed")
+            seed = coerce_int(seed, DEFAULT_SEED, "seed", row_id, min_value=-1)
+            if seed == -1:
+                seed = random.randint(0, 2**32 - 1)
             steps_val = coerce_int(
                 row.get("steps"), DEFAULT_STEPS, "steps", row_id, min_value=1
             )
@@ -352,7 +354,7 @@ def main() -> None:
                         prompt,
                         checkpoint=checkpoint,
                         vae=vae,
-                        seed=seed_val + b,
+                        seed=seed + b,
                         width=width_val,
                         height=height_val,
                         cfg=cfg_val,
