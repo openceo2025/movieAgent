@@ -282,14 +282,12 @@ def main() -> None:
             batch = coerce_int(
                 row.get("batch_count"), DEFAULT_BATCH, "batch_count", row_id, min_value=1
             )
-            tag_str = row.get("tags", "")
-            category_raw = row.get("category", "")
-            folder_name = (
-                f"{slugify(category_raw)}_{slugify(tag_str)}_{checkpoint}_"
-                f"{datetime.now():%Y%m%d_%H%M%S}"
-            )
-            folder_path = Path("items") / folder_name
-            os.makedirs(folder_path, exist_ok=True)
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            cat = slugify(str(row.get("category", "")))
+            tag_raw = str(row.get("tags", ""))
+            tag = slugify(tag_raw.replace(",", "_"))
+            folder = Path("items") / f"{cat}_{tag}_{checkpoint}_{timestamp}"
+            folder.mkdir(parents=True, exist_ok=True)
 
             for b in range(batch):
                 try:
@@ -302,7 +300,7 @@ def main() -> None:
                         height=height_val,
                         cfg=cfg_val,
                         steps=steps_val,
-                        output_dir=folder_path,
+                        output_dir=folder,
                         prefix=f"batch{b}",
                         debug=DEBUG_MODE,
                     )
@@ -318,7 +316,7 @@ def main() -> None:
                         f"Image generation error for row {row.get('id', idx)}: {e}"
                     )
 
-            df.at[idx, "image_path"] = folder_path.resolve().as_uri()
+            df.at[idx, "image_path"] = str(folder.resolve())
         st.session_state.image_df = df
         if st.session_state.autosave:
             save_data(df, CSV_FILE)
