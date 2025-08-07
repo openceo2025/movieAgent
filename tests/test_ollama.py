@@ -38,5 +38,7 @@ def test_generate_story_prompt(monkeypatch):
         return FakeResponse()
 
     monkeypatch.setattr(requests, "post", fake_post)
-    result = generate_story_prompt("A synopsis", "phi3:mini", 0.7, 10, 0.9)
+    result = generate_story_prompt(
+        "A synopsis", "phi3:mini", 0.7, 10, 0.9, stream=False
+    )
     assert result == "Once upon a time"

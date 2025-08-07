@@ -45,6 +45,7 @@ DEFAULT_TEMPERATURE = 0.7
 DEFAULT_MAX_TOKENS = 4096
 DEFAULT_TOP_P = 0.95
 DEFAULT_SEED = 31337
+DEFAULT_OLLAMA_TIMEOUT = 300
 
 # FramePack default parameters
 DEFAULT_LATENT_WINDOW_SIZE = 9
@@ -109,6 +110,10 @@ def main() -> None:
             df[col] = ""
         else:
             df[col] = df[col].fillna("")
+    if "timeout" not in df.columns:
+        df["timeout"] = DEFAULT_OLLAMA_TIMEOUT
+    else:
+        df["timeout"] = df["timeout"].fillna(DEFAULT_OLLAMA_TIMEOUT)
     st.session_state.video_df = df
 
     st.write("### Video Spreadsheet")
@@ -163,6 +168,11 @@ def main() -> None:
                 step=0.05,
                 min_value=0.0,
                 max_value=1.0,
+            ),
+            "timeout": st.column_config.NumberColumn(
+                "Timeout",
+                min_value=1,
+                step=1,
             ),
             "cfg": st.column_config.NumberColumn(
                 "CFG",
@@ -260,6 +270,10 @@ def main() -> None:
             if pd.isna(top_p) or top_p == "":
                 top_p = DEFAULT_TOP_P
             top_p = float(top_p)
+            timeout = row.get("timeout", DEFAULT_OLLAMA_TIMEOUT)
+            if pd.isna(timeout) or timeout == "":
+                timeout = DEFAULT_OLLAMA_TIMEOUT
+            timeout = int(timeout)
             if synopsis:
                 prompt = generate_story_prompt(
                     synopsis,
@@ -268,6 +282,7 @@ def main() -> None:
                     max_tokens,
                     top_p,
                     debug=DEBUG_MODE,
+                    timeout=timeout,
                 )
                 if prompt is not None:
                     df.at[idx, "story_prompt"] = prompt

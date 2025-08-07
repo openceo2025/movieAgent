@@ -40,6 +40,7 @@ if args.debug:
 BASE_DIR = Path(__file__).resolve().parent.parent
 CSV_FILE = str(BASE_DIR / "images.csv")
 AUTOPOSTER_API_URL = os.getenv("AUTOPOSTER_API_URL", "http://127.0.0.1:9000")
+DEFAULT_TIMEOUT = 300
 
 st.set_page_config(page_title="Image Agent", layout="wide")
 
@@ -79,6 +80,10 @@ def main() -> None:
             df[col] = ""
         else:
             df[col] = df[col].fillna("")
+    if "timeout" not in df.columns:
+        df["timeout"] = DEFAULT_TIMEOUT
+    else:
+        df["timeout"] = df["timeout"].fillna(DEFAULT_TIMEOUT)
     st.session_state.image_df = df
 
     st.write("### Image Spreadsheet")
@@ -115,6 +120,7 @@ def main() -> None:
             ),
             "width": st.column_config.NumberColumn("Width", min_value=64),
             "height": st.column_config.NumberColumn("Height", min_value=64),
+            "timeout": st.column_config.NumberColumn("Timeout", min_value=1),
         },
         num_rows="dynamic",
         hide_index=True,
@@ -140,6 +146,7 @@ def main() -> None:
                             temperature=row.get("temperature", DEFAULT_TEMPERATURE),
                             max_tokens=row.get("max_tokens", DEFAULT_MAX_TOKENS),
                             top_p=row.get("top_p", DEFAULT_TOP_P),
+                            timeout=int(row.get("timeout", DEFAULT_TIMEOUT) or DEFAULT_TIMEOUT),
                         )
                         df.at[idx, "image_prompt"] = prompt
                     except Exception as e:
