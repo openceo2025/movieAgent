@@ -77,7 +77,8 @@ def generate_story_prompt(
     """
     if debug is None:
         debug = DEBUG_MODE
-    prompt = f"Generate a short story based on this context:\n{context}\n"
+    # Pass the context directly so any caller-provided instructions remain intact
+    prompt = context
     url = "http://localhost:11434/api/generate"
     payload: dict[str, object] = {
         "model": model,

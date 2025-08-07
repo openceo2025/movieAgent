@@ -48,11 +48,12 @@ def test_generate_story_prompt(monkeypatch):
         return FakeResponse()
 
     monkeypatch.setattr(requests, "post", fake_post)
-    result = generate_story_prompt("A synopsis", "phi3:mini")
+    context = "A synopsis"
+    result = generate_story_prompt(context, "phi3:mini")
     assert result == "Once upon a time"
     assert captured["json"] == {
         "model": "phi3:mini",
-        "prompt": "Generate a short story based on this context:\nA synopsis\n",
+        "prompt": context,
         "stream": False,
         "options": {"temperature": 0.8},
     }

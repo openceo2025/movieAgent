@@ -180,6 +180,8 @@ def main() -> None:
                             f"Tags: {row.get('tags')}\n"
                             f"Base prompt (Japanese): {base}\n"
                             f"NSFW allowed: {nsfw}\n"
+                            "Return only the final English image-generation prompt.\n"
+                            "Do not include any explanations, notes, or reasoning text.\n"
                         )
                         prompt = generate_story_prompt(
                             synopsis,
