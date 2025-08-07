@@ -102,6 +102,10 @@ def main() -> None:
         df["timeout"] = DEFAULT_TIMEOUT
     else:
         df["timeout"] = df["timeout"].fillna(DEFAULT_TIMEOUT)
+    if "cfg" not in df.columns:
+        df["cfg"] = DEFAULT_CFG
+    else:
+        df["cfg"] = df["cfg"].replace("", DEFAULT_CFG).fillna(DEFAULT_CFG)
     st.session_state.image_df = df
 
     st.write("### Image Spreadsheet")
@@ -140,6 +144,7 @@ def main() -> None:
             ),
             "width": st.column_config.NumberColumn("Width", min_value=64),
             "height": st.column_config.NumberColumn("Height", min_value=64),
+            "cfg": st.column_config.NumberColumn("CFG", min_value=1.0),
             "timeout": st.column_config.NumberColumn("Timeout", min_value=1),
         },
         num_rows="dynamic",
@@ -207,11 +212,35 @@ def main() -> None:
                     st.warning("No ComfyUI checkpoints available")
                     continue
             vae = row.get("comfy_vae") or ""
-            seed_val = int(row.get("seed", DEFAULT_SEED) or DEFAULT_SEED)
-            steps_val = int(row.get("steps", DEFAULT_STEPS) or DEFAULT_STEPS)
-            width_val = int(row.get("width", DEFAULT_WIDTH) or DEFAULT_WIDTH)
-            height_val = int(row.get("height", DEFAULT_HEIGHT) or DEFAULT_HEIGHT)
-            batch = int(row.get("batch_count", 1) or 1)
+            seed_val = row.get("seed", DEFAULT_SEED)
+            if pd.isna(seed_val) or str(seed_val).strip() == "":
+                seed_val = DEFAULT_SEED
+            seed_val = int(seed_val)
+
+            steps_val = row.get("steps", DEFAULT_STEPS)
+            if pd.isna(steps_val) or str(steps_val).strip() == "":
+                steps_val = DEFAULT_STEPS
+            steps_val = int(steps_val)
+
+            width_val = row.get("width", DEFAULT_WIDTH)
+            if pd.isna(width_val) or str(width_val).strip() == "":
+                width_val = DEFAULT_WIDTH
+            width_val = int(width_val)
+
+            height_val = row.get("height", DEFAULT_HEIGHT)
+            if pd.isna(height_val) or str(height_val).strip() == "":
+                height_val = DEFAULT_HEIGHT
+            height_val = int(height_val)
+
+            cfg_val = row.get("cfg", DEFAULT_CFG)
+            if pd.isna(cfg_val) or str(cfg_val).strip() == "":
+                cfg_val = DEFAULT_CFG
+            cfg_val = float(cfg_val)
+
+            batch = row.get("batch_count", 1)
+            if pd.isna(batch) or str(batch).strip() == "":
+                batch = 1
+            batch = int(batch)
 
             for b in range(batch):
                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -230,7 +259,7 @@ def main() -> None:
                         seed=seed_val + b,
                         width=width_val,
                         height=height_val,
-                        cfg=row.get("cfg", DEFAULT_CFG),
+                        cfg=cfg_val,
                         steps=steps_val,
                         debug=DEBUG_MODE,
                     )
