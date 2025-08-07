@@ -17,10 +17,7 @@ DEFAULT_CFG = 7
 DEFAULT_STEPS = 28
 DEFAULT_WIDTH = 1024
 DEFAULT_HEIGHT = 1024
-DEFAULT_NEGATIVE_PROMPT = (
-    "embedding:BadDream:0.6, embedding:BadHandsV2:0.4, "
-    "blurry, watermark, lowres, jpeg artifacts"
-)
+DEFAULT_NEGATIVE_PROMPT = "blurry, watermark, lowres, jpeg artifacts"
 
 # Utility coercion helpers
 
