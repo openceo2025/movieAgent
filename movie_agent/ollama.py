@@ -47,7 +47,7 @@ def list_ollama_models(debug: bool | None = None) -> list[str]:
 
 
 def generate_story_prompt(
-    synopsis: str,
+    context: str,
     model: str,
     temperature: float = 0.8,
     max_tokens: int | None = None,
@@ -55,10 +55,29 @@ def generate_story_prompt(
     debug: bool | None = None,
     timeout: int = 300,
 ) -> str | None:
-    """Generate a story prompt using the local Ollama API."""
+    """Generate a prompt using the local Ollama API.
+
+    Parameters
+    ----------
+    context : str
+        Combined context or instructions for the model (e.g., category, tags,
+        base prompt, NSFW flag).
+    model : str
+        Ollama model name to use.
+    temperature : float, default 0.8
+        Sampling temperature passed to Ollama.
+    max_tokens : int | None, optional
+        Maximum tokens to generate.
+    top_p : float | None, optional
+        Nucleus sampling parameter.
+    debug : bool | None, optional
+        Enable debug logging if True.
+    timeout : int, default 300
+        Request timeout in seconds.
+    """
     if debug is None:
         debug = DEBUG_MODE
-    prompt = f"Generate a short story based on this synopsis:\n{synopsis}\n"
+    prompt = f"Generate a short story based on this context:\n{context}\n"
     url = "http://localhost:11434/api/generate"
     payload: dict[str, object] = {
         "model": model,

@@ -52,7 +52,7 @@ def test_generate_story_prompt(monkeypatch):
     assert result == "Once upon a time"
     assert captured["json"] == {
         "model": "phi3:mini",
-        "prompt": "Generate a short story based on this synopsis:\nA synopsis\n",
+        "prompt": "Generate a short story based on this context:\nA synopsis\n",
         "stream": False,
         "options": {"temperature": 0.8},
     }

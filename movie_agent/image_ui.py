@@ -157,9 +157,10 @@ def main() -> None:
         df = st.session_state.image_df.copy()
         selected = df[df["selected"]]
         for idx, row in selected.iterrows():
-            ja = row.get("ja_prompt", "")
+            base = row.get("ja_prompt", "")
+            nsfw = bool(row.get("nsfw"))
             if not row.get("image_prompt"):
-                if ja:
+                if base:
                     try:
                         model = row.get("llm_model")
                         if not model:
@@ -170,25 +171,36 @@ def main() -> None:
                             val = row.get(key)
                             if pd.notna(val) and val != "":
                                 kwargs[key] = val
+                        synopsis = (
+                            "Create an English image-generation prompt.\n"
+                            f"Category: {row.get('category')}\n"
+                            f"Tags: {row.get('tags')}\n"
+                            f"Base prompt (Japanese): {base}\n"
+                            f"NSFW allowed: {nsfw}\n"
+                        )
                         prompt = generate_story_prompt(
-                            ja,
+                            synopsis,
                             model=model,
                             timeout=int(
                                 row.get("timeout", DEFAULT_TIMEOUT) or DEFAULT_TIMEOUT
                             ),
                             **kwargs,
                         )
-                        df.at[idx, "image_prompt"] = prompt
-                        st.toast(
-                            f"Prompt generated for row {row.get('id', idx)}"
-                        )
+                        if prompt:
+                            if nsfw:
+                                prompt = f"{prompt.rstrip()} NSFW"
+                            df.at[idx, "image_prompt"] = prompt
+                            st.toast(
+                                f"Prompt generated for row {row.get('id', idx)}"
+                            )
                     except Exception as e:
                         st.error(
                             f"Prompt generation failed for row {row.get('id', idx)}: {e}"
                         )
             else:
-                st.warning(
-                    f"Row {row.get('id', idx)} already has an image_prompt"
+                st.toast(
+                    f"Row {row.get('id', idx)} already has an image_prompt",
+                    icon="⚠️",
                 )
         st.session_state.image_df = df
         if st.session_state.autosave:
