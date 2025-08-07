@@ -1,5 +1,6 @@
 import argparse
 import subprocess
+import json
 import requests
 import streamlit as st
 
@@ -51,6 +52,8 @@ def generate_story_prompt(
     max_tokens: int,
     top_p: float,
     debug: bool | None = None,
+    timeout: int = 300,
+    stream: bool = True,
 ) -> str | None:
     """Generate a story prompt using the local Ollama API."""
     if debug is None:
@@ -63,20 +66,39 @@ def generate_story_prompt(
         "temperature": temperature,
         "num_predict": max_tokens,
         "top_p": top_p,
-        "stream": False,
+        "stream": stream,
     }
     if debug:
         print("[DEBUG] Request payload:", payload)
     try:
-        res = requests.post(url, json=payload, timeout=60)
+        res = requests.post(url, json=payload, timeout=timeout, stream=stream)
         if debug:
             print("[DEBUG] Response status:", res.status_code)
-            print("[DEBUG] Raw response:", res.text)
         res.raise_for_status()
-        data = res.json()
-        if debug:
-            print("[DEBUG] Parsed response:", data)
-        return data.get("response", "").strip()
+        if stream:
+            chunks: list[str] = []
+            for line in res.iter_lines():
+                if not line:
+                    continue
+                try:
+                    data = json.loads(line.decode("utf-8"))
+                except json.JSONDecodeError as e:
+                    if debug:
+                        print("[DEBUG] JSON decode error:", e, line)
+                    continue
+                if debug:
+                    print("[DEBUG] Stream chunk:", data)
+                chunks.append(data.get("response", ""))
+                if data.get("done"):
+                    break
+            return "".join(chunks).strip()
+        else:
+            if debug:
+                print("[DEBUG] Raw response:", res.text)
+            data = res.json()
+            if debug:
+                print("[DEBUG] Parsed response:", data)
+            return data.get("response", "").strip()
     except requests.exceptions.RequestException as e:
         st.error(f"Ollama API error: {e}")
     except ValueError as e:
