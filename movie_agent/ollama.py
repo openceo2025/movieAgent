@@ -1,6 +1,7 @@
 import argparse
 import subprocess
 import json
+import re
 import requests
 import streamlit as st
 
@@ -48,9 +49,9 @@ def list_ollama_models(debug: bool | None = None) -> list[str]:
 def generate_story_prompt(
     synopsis: str,
     model: str,
-    temperature: float,
-    max_tokens: int,
-    top_p: float,
+    temperature: float = 0.8,
+    max_tokens: int | None = None,
+    top_p: float | None = None,
     debug: bool | None = None,
     timeout: int = 300,
 ) -> str | None:
@@ -59,14 +60,20 @@ def generate_story_prompt(
         debug = DEBUG_MODE
     prompt = f"Generate a short story based on this synopsis:\n{synopsis}\n"
     url = "http://localhost:11434/api/generate"
-    payload = {
+    payload: dict[str, object] = {
         "model": model,
         "prompt": prompt,
-        "temperature": temperature,
-        "num_predict": max_tokens,
-        "top_p": top_p,
         "stream": False,
     }
+    options: dict[str, object] = {}
+    if temperature is not None:
+        options["temperature"] = temperature
+    if max_tokens is not None:
+        options["num_predict"] = max_tokens
+    if top_p is not None:
+        options["top_p"] = top_p
+    if options:
+        payload["options"] = options
     if debug:
         print("[DEBUG] Request payload:", payload)
     try:
@@ -79,14 +86,19 @@ def generate_story_prompt(
         data = res.json()
         if debug:
             print("[DEBUG] Parsed response:", json.dumps(data, indent=2))
+        resp = data.get("response", "")
         reasoning_parts = []
         for key in ("thinking", "analysis"):
             if data.get(key):
-                reasoning_parts.append(data[key])
-        reasoning_text = "".join(reasoning_parts).strip()
-        if reasoning_text:
-            print("[Reasoning]", reasoning_text)
-        return data.get("response", "").strip()
+                reasoning_parts.append(str(data[key]))
+        think_matches = re.findall(r"<think>(.*?)</think>", resp, flags=re.DOTALL)
+        if think_matches:
+            reasoning_parts.extend([t.strip() for t in think_matches])
+            resp = re.sub(r"<think>.*?</think>", "", resp, flags=re.DOTALL)
+        resp = resp.strip()
+        if debug and reasoning_parts:
+            print("[Reasoning]", "\n".join(reasoning_parts).strip())
+        return resp
     except requests.exceptions.RequestException as e:
         st.error(f"Ollama API error: {e}")
     except ValueError as e:
