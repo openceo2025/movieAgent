@@ -43,6 +43,12 @@ DEFAULT_TIMEOUT = 300
 st.set_page_config(page_title="Image Agent", layout="wide")
 
 
+def rerun_with_message(message: str) -> None:
+    """Trigger st.rerun() and show a message after reload."""
+    st.session_state["just_rerun"] = message
+    st.rerun()
+
+
 def main() -> None:
     """Run the Streamlit UI for image generation and posting."""
     msg = st.session_state.pop("just_rerun", None)
@@ -128,7 +134,7 @@ def main() -> None:
     prompt_col, gen_col, post_col, anal_col = st.columns(4)
 
     if prompt_col.button("Generate prompt"):
-        df = st.session_state.image_df
+        df = st.session_state.image_df.copy()
         selected = df[df["selected"]]
         for idx, row in selected.iterrows():
             ja = row.get("ja_prompt", "")
@@ -153,6 +159,9 @@ def main() -> None:
                             **kwargs,
                         )
                         df.at[idx, "image_prompt"] = prompt
+                        st.toast(
+                            f"Prompt generated for row {row.get('id', idx)}"
+                        )
                     except Exception as e:
                         st.error(
                             f"Prompt generation failed for row {row.get('id', idx)}: {e}"
@@ -164,6 +173,7 @@ def main() -> None:
         st.session_state.image_df = df
         if st.session_state.autosave:
             save_data(df, CSV_FILE)
+        rerun_with_message("Page reloaded after generating prompts")
 
     if gen_col.button("Generate images"):
         df = st.session_state.image_df
