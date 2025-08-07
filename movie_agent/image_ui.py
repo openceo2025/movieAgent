@@ -4,7 +4,6 @@ from datetime import datetime
 from pathlib import Path
 
 import base64
-import json
 from typing import Optional
 
 import requests
@@ -115,32 +114,25 @@ def post_to_wordpress(row: pd.Series) -> Optional[str]:
         "tags": tags_list,
     }
     try:
-        res = requests.post(WORDPRESS_API_URL, json=payload, timeout=10)
-        res.raise_for_status()
+        resp = requests.post(WORDPRESS_API_URL, json=payload, timeout=10)
+        resp.raise_for_status()
     except requests.HTTPError as e:
         st.error(f"WordPress投稿に失敗しました: {e}")
         return None
     except requests.RequestException as e:
         st.error(f"WordPress投稿に失敗しました: {e}")
         return None
-    if res.status_code not in (200, 201):
+    if resp.status_code not in (200, 201):
         st.error(
-            f"WordPress投稿に失敗しました: {res.status_code} {res.text}"
+            f"WordPress投稿に失敗しました: {resp.status_code} {resp.text}"
         )
         return None
-    try:
-        data = res.json()
-    except Exception:
-        try:
-            data = json.loads(res.text)
-        except Exception:
-            st.error(res.text)
-            return None
+    data = resp.json()
     url = data.get("url")
-    if not url:
-        st.error(data)
-        return None
-    return url
+    if url:
+        return url
+    st.warning("WordPressから投稿URLが返されませんでした")
+    return None
 
 
 def main() -> None:
