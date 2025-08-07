@@ -317,10 +317,15 @@ def main() -> None:
                 row.get("batch_count"), DEFAULT_BATCH, "batch_count", row_id, min_value=1
             )
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            cat = slugify(str(row.get("category", "")))
-            tag_raw = str(row.get("tags", ""))
-            tag = slugify(tag_raw.replace(",", "_"))
-            folder = Path("items") / f"{cat}_{tag}_{checkpoint}_{timestamp}"
+            cat_raw = str(row.get("category", "")).strip()
+            tag_raw = str(row.get("tags", "")).replace(",", "_").strip()
+            parts = []
+            if cat_raw:
+                parts.append(slugify(cat_raw))
+            if tag_raw:
+                parts.append(slugify(tag_raw))
+            parts.extend([checkpoint, timestamp])
+            folder = Path("items") / "_".join(parts)
             folder.mkdir(parents=True, exist_ok=True)
 
             for b in range(batch):

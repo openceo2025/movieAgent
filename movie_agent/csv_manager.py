@@ -19,7 +19,7 @@ DEFAULT_VIDEO_LENGTH = 3
 def slugify(text: str) -> str:
     """Simplified slugify implementation."""
     text = text.lower().strip()
-    text = re.sub(r"[^a-z0-9]+", "_", text)
+    text = re.sub(r"[^\w.-]+", "_", text, flags=re.UNICODE)
     return text.strip("_") or "item"
 
 

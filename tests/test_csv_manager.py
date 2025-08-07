@@ -5,6 +5,7 @@ from movie_agent.csv_manager import (
     load_data,
     save_data,
     unique_path,
+    slugify,
     DEFAULT_MODEL,
     DEFAULT_MAX_TOKENS,
     DEFAULT_TEMPERATURE,
@@ -48,6 +49,11 @@ def test_unique_path(tmp_path):
     result2 = unique_path(str(base))
     assert result2.endswith("_2.txt")
     assert not os.path.exists(result2)
+
+
+def test_slugify_unicode():
+    assert slugify("テスト 日本語") == "テスト_日本語"
+    assert slugify("Hello 世界!!") == "hello_世界"
 
 
 def test_load_data_defaults_existing_file(tmp_path):
