@@ -103,8 +103,9 @@ def post_to_wordpress(row: pd.Series) -> str:
             with open(p, "rb") as f:
                 encoded = base64.b64encode(f.read()).decode("utf-8")
             media.append({"filename": p.name, "data": encoded})
+    account = WORDPRESS_ACCOUNT or "nicchi"
     payload = {
-        "account": WORDPRESS_ACCOUNT,
+        "account": account,
         "title": title,
         "content": content,
         "media": media,
@@ -113,8 +114,19 @@ def post_to_wordpress(row: pd.Series) -> str:
     }
     res = requests.post(WORDPRESS_API_URL, json=payload, timeout=10)
     res.raise_for_status()
-    data = json.loads(res.text)
-    return data.get("url", "")
+    try:
+        data = res.json()
+    except Exception:
+        try:
+            data = json.loads(res.text)
+        except Exception:
+            st.error(res.text)
+            return ""
+    url = data.get("url")
+    if not url:
+        st.error(data)
+        return ""
+    return url
 
 
 def main() -> None:
@@ -374,8 +386,6 @@ def main() -> None:
                 if url:
                     df.at[idx, "post_url"] = url
                     st.success(f"Posted: {url}")
-                else:
-                    st.error("No URL returned from WordPress")
             except Exception as e:
                 st.error(
                     f"Posting failed for row {row.get('id', idx)}: {e}"
