@@ -149,7 +149,7 @@ Include the following columns in your sheet:
 - `ja_prompt`
 - `llm_model`
 - `image_prompt`
-- `image_path`
+- `image_path` – absolute file URI of the folder containing generated images
 - `post_url`
 - `views_yesterday`
 - `views_week`
@@ -161,7 +161,7 @@ Additional LLM or ComfyUI parameter columns (model, temperature, steps, seed, wi
 
 ### Button actions
 - **Generate prompt** – use Ollama to convert `ja_prompt` into an English `image_prompt`.
-- **Generate images** – call ComfyUI to create an image saved at `image_path`.
+- **Generate images** – call ComfyUI to create images in a unique folder; `image_path` stores the folder URI.
 - **Post** – upload the image via the local `autoPoster` API and store the resulting `post_url`.
 - **Analysis** – query the `autoPoster` API to fill `views_yesterday`, `views_week`, and `views_month`.
 

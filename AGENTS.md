@@ -96,10 +96,11 @@ streamlit run movie_agent/app.py
 
 ### 必須列
 `category`, `tags`, `nsfw`, `ja_prompt`, `llm_model`, `image_prompt`, `image_path`, `post_url`, `views_yesterday`, `views_week`, `views_month` が最低限必要です。`llm_model` は英語プロンプト生成に使用する Ollama モデルを指定し、デフォルトは `gpt-oss:20b` です。シートでは `image_prompt` 列の前に配置してください。既存の LLM / ComfyUI パラメータ列も併用できます。
+`image_path` には生成した画像をまとめたフォルダの絶対パス (file URI) を保存し、クリックで直接開くことができます。
 
 ### ボタン
 - **Generate prompt** – `ja_prompt` を英語 `image_prompt` へ変換
-- **Generate images** – ComfyUI で画像生成
+- **Generate images** – ComfyUI で画像生成し、フォルダパスを `image_path` に保存
 - **Post** – autoPoster へ投稿
 - **Analysis** – autoPoster から視聴数取得
 

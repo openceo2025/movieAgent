@@ -6,6 +6,7 @@ from pathlib import Path
 import requests
 import streamlit as st
 import pandas as pd
+from urllib.parse import urlparse, unquote
 from movie_agent.comfyui import (
     list_comfy_models,
     generate_image,
@@ -122,7 +123,9 @@ def main() -> None:
                 "LLM Model", options=st.session_state.models
             ),
             "image_prompt": st.column_config.TextColumn("Image Prompt"),
-            "image_path": st.column_config.TextColumn("Image Path"),
+            "image_path": st.column_config.LinkColumn(
+                "Image Path", display_text="Open Folder"
+            ),
             "post_url": st.column_config.TextColumn("Post URL"),
             "views_yesterday": st.column_config.NumberColumn(
                 "Views Yesterday", min_value=0
@@ -242,14 +245,15 @@ def main() -> None:
                 batch = 1
             batch = int(batch)
 
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            category = slugify(row.get("category", ""))
+            model_slug = slugify(checkpoint or "model")
+            dir_path = Path(BASE_DIR) / "imgs" / category / f"{timestamp}_{model_slug}"
+            os.makedirs(dir_path, exist_ok=True)
+
             for b in range(batch):
-                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                category = slugify(row.get("category", ""))
-                model_slug = slugify(checkpoint or "model")
-                filename = f"{timestamp}_{model_slug}_{b}.png"
-                base_dir = Path(BASE_DIR) / "imgs" / category
-                os.makedirs(base_dir, exist_ok=True)
-                out_path = unique_path(str(base_dir / filename))
+                filename = f"{b}.png"
+                out_path = Path(unique_path(str(dir_path / filename)))
 
                 try:
                     img_bytes = generate_image(
@@ -266,7 +270,6 @@ def main() -> None:
                     if img_bytes:
                         with open(out_path, "wb") as f:
                             f.write(img_bytes)
-                        df.at[idx, "image_path"] = out_path
                         st.success(f"Saved image to {out_path}")
                     else:
                         st.error(
@@ -276,6 +279,8 @@ def main() -> None:
                     st.error(
                         f"Image generation error for row {row.get('id', idx)}: {e}"
                     )
+
+            df.at[idx, "image_path"] = Path(dir_path).resolve().as_uri()
         st.session_state.image_df = df
         if st.session_state.autosave:
             save_data(df, CSV_FILE)
@@ -285,15 +290,33 @@ def main() -> None:
         selected = df[df["selected"]]
         for idx, row in selected.iterrows():
             image_path = row.get("image_path", "")
-            if not image_path or not os.path.exists(image_path):
+            if not image_path:
                 st.warning(f"No image file for row {row.get('id', idx)}")
                 continue
+
+            if image_path.startswith("file:"):
+                parsed = urlparse(image_path)
+                local_path = Path(unquote(parsed.path))
+            else:
+                local_path = Path(image_path)
+
+            if local_path.is_dir():
+                candidates = sorted(local_path.glob("*.png"))
+                if not candidates:
+                    st.warning(f"No image files in {local_path}")
+                    continue
+                local_path = candidates[0]
+
+            if not local_path.exists():
+                st.warning(f"No image file for row {row.get('id', idx)}")
+                continue
+
             title = row.get("id", "")
             tags = row.get("tags", "")
             try:
-                files = {"file": open(image_path, "rb")}
+                files = {"file": open(local_path, "rb")}
             except Exception:
-                st.error(f"Unable to open image {image_path}")
+                st.error(f"Unable to open image {local_path}")
                 continue
             try:
                 res = requests.post(
