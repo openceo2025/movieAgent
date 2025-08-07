@@ -38,8 +38,43 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 CSV_FILE = str(BASE_DIR / "images.csv")
 AUTOPOSTER_API_URL = os.getenv("AUTOPOSTER_API_URL", "http://127.0.0.1:9000")
 DEFAULT_TIMEOUT = 300
+DEFAULT_BATCH = 1
 
 st.set_page_config(page_title="Image Agent", layout="wide")
+
+
+def coerce_int(value, default, label, row_id, min_value=None):
+    """Safely convert ``value`` to int or return ``default`` with a toast."""
+    if pd.isna(value) or str(value).strip() == "":
+        return default
+    try:
+        value = int(value)
+    except (ValueError, TypeError):
+        st.toast(f"Invalid {label} for row {row_id}; using default {default}")
+        return default
+    if min_value is not None and value < min_value:
+        st.toast(
+            f"{label.capitalize()} must be >= {min_value} for row {row_id}; using {default}"
+        )
+        return default
+    return value
+
+
+def coerce_float(value, default, label, row_id, min_value=None):
+    """Safely convert ``value`` to float or return ``default`` with a toast."""
+    if pd.isna(value) or str(value).strip() == "":
+        return default
+    try:
+        value = float(value)
+    except (ValueError, TypeError):
+        st.toast(f"Invalid {label} for row {row_id}; using default {default}")
+        return default
+    if min_value is not None and value < min_value:
+        st.toast(
+            f"{label.capitalize()} must be >= {min_value} for row {row_id}; using {default}"
+        )
+        return default
+    return value
 
 
 def rerun_with_message(message: str) -> None:
@@ -228,35 +263,25 @@ def main() -> None:
                     st.warning("No ComfyUI checkpoints available")
                     continue
             vae = row.get("comfy_vae") or ""
-            seed_val = row.get("seed", DEFAULT_SEED)
-            if pd.isna(seed_val) or str(seed_val).strip() == "":
-                seed_val = DEFAULT_SEED
-            seed_val = int(seed_val)
-
-            steps_val = row.get("steps", DEFAULT_STEPS)
-            if pd.isna(steps_val) or str(steps_val).strip() == "":
-                steps_val = DEFAULT_STEPS
-            steps_val = int(steps_val)
-
-            width_val = row.get("width", DEFAULT_WIDTH)
-            if pd.isna(width_val) or str(width_val).strip() == "":
-                width_val = DEFAULT_WIDTH
-            width_val = int(width_val)
-
-            height_val = row.get("height", DEFAULT_HEIGHT)
-            if pd.isna(height_val) or str(height_val).strip() == "":
-                height_val = DEFAULT_HEIGHT
-            height_val = int(height_val)
-
-            cfg_val = row.get("cfg", DEFAULT_CFG)
-            if pd.isna(cfg_val) or str(cfg_val).strip() == "":
-                cfg_val = DEFAULT_CFG
-            cfg_val = float(cfg_val)
-
-            batch = row.get("batch_count", 1)
-            if pd.isna(batch) or str(batch).strip() == "":
-                batch = 1
-            batch = int(batch)
+            row_id = row.get("id", idx)
+            seed_val = coerce_int(
+                row.get("seed"), DEFAULT_SEED, "seed", row_id, min_value=0
+            )
+            steps_val = coerce_int(
+                row.get("steps"), DEFAULT_STEPS, "steps", row_id, min_value=1
+            )
+            width_val = coerce_int(
+                row.get("width"), DEFAULT_WIDTH, "width", row_id, min_value=1
+            )
+            height_val = coerce_int(
+                row.get("height"), DEFAULT_HEIGHT, "height", row_id, min_value=1
+            )
+            cfg_val = coerce_float(
+                row.get("cfg"), DEFAULT_CFG, "cfg", row_id, min_value=0
+            )
+            batch = coerce_int(
+                row.get("batch_count"), DEFAULT_BATCH, "batch_count", row_id, min_value=1
+            )
             tag_str = row.get("tags", "")
             category_raw = row.get("category", "")
             folder_name = (

@@ -22,6 +22,38 @@ DEFAULT_NEGATIVE_PROMPT = (
     "blurry, watermark, lowres, jpeg artifacts"
 )
 
+# Utility coercion helpers
+
+
+def _coerce_int(value, default, name, min_value=None):
+    """Convert ``value`` to int or return ``default`` and toast on error."""
+    if value in (None, ""):
+        return default
+    try:
+        value = int(value)
+    except (ValueError, TypeError):
+        st.toast(f"Invalid {name}; using default {default}")
+        return default
+    if min_value is not None and value < min_value:
+        st.toast(f"{name.capitalize()} must be >= {min_value}; using {default}")
+        return default
+    return value
+
+
+def _coerce_float(value, default, name, min_value=None):
+    """Convert ``value`` to float or return ``default`` and toast on error."""
+    if value in (None, ""):
+        return default
+    try:
+        value = float(value)
+    except (ValueError, TypeError):
+        st.toast(f"Invalid {name}; using default {default}")
+        return default
+    if min_value is not None and value < min_value:
+        st.toast(f"{name.capitalize()} must be >= {min_value}; using {default}")
+        return default
+    return value
+
 # Base workflow used for the ComfyUI /prompt API
 BASE_WORKFLOW = {
     "3": {
@@ -118,6 +150,12 @@ def generate_image(
     Returns a list of file paths for the saved images. If generation fails,
     an empty list is returned.
     """
+    seed = _coerce_int(seed, 0, "seed", min_value=0)
+    width = _coerce_int(width, DEFAULT_WIDTH, "width", min_value=1)
+    height = _coerce_int(height, DEFAULT_HEIGHT, "height", min_value=1)
+    cfg = _coerce_float(cfg, DEFAULT_CFG, "cfg", min_value=0)
+    steps = _coerce_int(steps, DEFAULT_STEPS, "steps", min_value=1)
+
     base = f"http://{COMFYUI_HOST}:{COMFYUI_PORT}"
     prompt_url = f"{base}/prompt"
 
