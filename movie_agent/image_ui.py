@@ -149,6 +149,9 @@ def main() -> None:
         num_rows="dynamic",
         hide_index=True,
     )
+    if len(edited_df) > len(st.session_state.last_saved_df):
+        save_data(edited_df, CSV_FILE)
+        st.session_state.last_saved_df = edited_df.copy()
     st.session_state.image_df = edited_df
 
     prompt_col, gen_col, post_col, anal_col = st.columns(4)
