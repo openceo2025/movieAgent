@@ -2,7 +2,8 @@ import os
 import json
 import base64
 import time
-from typing import Optional
+from pathlib import Path
+from typing import List
 
 import requests
 import streamlit as st
@@ -108,9 +109,15 @@ def generate_image(
     cfg: float = DEFAULT_CFG,
     steps: int = DEFAULT_STEPS,
     control_image: str | None = None,
+    output_dir: Path | str = Path("."),
+    prefix: str = "image",
     debug: bool = False,
-) -> Optional[bytes]:
-    """Generate an image via ComfyUI using polling."""
+) -> List[Path]:
+    """Generate image(s) via ComfyUI and save to ``output_dir``.
+
+    Returns a list of file paths for the saved images. If generation fails,
+    an empty list is returned.
+    """
     base = f"http://{COMFYUI_HOST}:{COMFYUI_PORT}"
     prompt_url = f"{base}/prompt"
 
@@ -162,6 +169,8 @@ def generate_image(
 
     history_url = f"{base}/history/{prompt_id}"
     view_url = f"{base}/view"
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
     for _ in range(60):
         try:
             r = requests.get(history_url, timeout=10)
@@ -178,19 +187,20 @@ def generate_image(
             for node_data in outputs.values():
                 images = node_data.get("images")
                 if images:
-                    for img in images:
+                    saved_paths: List[Path] = []
+                    for n, img in enumerate(images):
                         params = {"filename": img.get("filename")}
                         if img.get("subfolder"):
                             params["subfolder"] = img.get("subfolder")
                         if img.get("type"):
                             params["type"] = img.get("type")
-                        resp = requests.get(
-                            view_url,
-                            params=params,
-                            timeout=10,
-                        )
+                        resp = requests.get(view_url, params=params, timeout=10)
                         resp.raise_for_status()
-                        return resp.content
+                        out_path = output_dir / f"{prefix}_{n}.png"
+                        with open(out_path, "wb") as f:
+                            f.write(resp.content)
+                        saved_paths.append(out_path)
+                    return saved_paths
         except requests.exceptions.RequestException as e:
             if debug:
                 print("[DEBUG] polling error:", e)
@@ -200,7 +210,7 @@ def generate_image(
         time.sleep(5)
 
     st.error("Timed out waiting for ComfyUI output")
-    return None
+    return []
 
 
 __all__ = [

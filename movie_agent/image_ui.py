@@ -21,7 +21,6 @@ from movie_agent.csv_manager import (
     load_image_data,
     save_data,
     slugify,
-    unique_path,
     DEFAULT_MODEL,
     DEFAULT_WIDTH,
     DEFAULT_HEIGHT,
@@ -122,7 +121,7 @@ def main() -> None:
                 "LLM Model", options=st.session_state.models
             ),
             "image_prompt": st.column_config.TextColumn("Image Prompt"),
-            "image_path": st.column_config.TextColumn("Image Path"),
+            "image_path": st.column_config.LinkColumn("Image Path"),
             "post_url": st.column_config.TextColumn("Post URL"),
             "views_yesterday": st.column_config.NumberColumn(
                 "Views Yesterday", min_value=0
@@ -241,18 +240,18 @@ def main() -> None:
             if pd.isna(batch) or str(batch).strip() == "":
                 batch = 1
             batch = int(batch)
+            tag_str = row.get("tags", "")
+            category_raw = row.get("category", "")
+            folder_name = (
+                f"{slugify(category_raw)}_{slugify(tag_str)}_{checkpoint}_"
+                f"{datetime.now():%Y%m%d_%H%M%S}"
+            )
+            folder_path = Path("items") / folder_name
+            os.makedirs(folder_path, exist_ok=True)
 
             for b in range(batch):
-                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                category = slugify(row.get("category", ""))
-                model_slug = slugify(checkpoint or "model")
-                filename = f"{timestamp}_{model_slug}_{b}.png"
-                base_dir = Path(BASE_DIR) / "imgs" / category
-                os.makedirs(base_dir, exist_ok=True)
-                out_path = unique_path(str(base_dir / filename))
-
                 try:
-                    img_bytes = generate_image(
+                    paths = generate_image(
                         prompt,
                         checkpoint=checkpoint,
                         vae=vae,
@@ -261,13 +260,13 @@ def main() -> None:
                         height=height_val,
                         cfg=cfg_val,
                         steps=steps_val,
+                        output_dir=folder_path,
+                        prefix=f"batch{b}",
                         debug=DEBUG_MODE,
                     )
-                    if img_bytes:
-                        with open(out_path, "wb") as f:
-                            f.write(img_bytes)
-                        df.at[idx, "image_path"] = out_path
-                        st.success(f"Saved image to {out_path}")
+                    if paths:
+                        for p in paths:
+                            st.success(f"Saved image to {p}")
                     else:
                         st.error(
                             f"Failed to generate image for row {row.get('id', idx)}"
@@ -276,6 +275,8 @@ def main() -> None:
                     st.error(
                         f"Image generation error for row {row.get('id', idx)}: {e}"
                     )
+
+            df.at[idx, "image_path"] = folder_path.resolve().as_uri()
         st.session_state.image_df = df
         if st.session_state.autosave:
             save_data(df, CSV_FILE)

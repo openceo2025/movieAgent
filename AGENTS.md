@@ -99,7 +99,7 @@ streamlit run movie_agent/app.py
 
 ### ボタン
 - **Generate prompt** – `ja_prompt` を英語 `image_prompt` へ変換
-- **Generate images** – ComfyUI で画像生成
+- **Generate images** – ComfyUI で画像生成。生成された画像は `items/<category>_<tags>_<checkpoint>_<YYYYMMDD_HHMMSS>/` というタイムスタンプ付きフォルダに保存され、`image_path` 列にはそのフォルダの絶対パス (`file://...`) がクリック可能なリンクとして記録されます。
 - **Post** – autoPoster へ投稿
 - **Analysis** – autoPoster から視聴数取得
 

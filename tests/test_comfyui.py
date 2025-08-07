@@ -36,7 +36,7 @@ def test_list_comfy_models(monkeypatch):
     assert loras == ["", "lora1"]
 
 
-def test_generate_image(monkeypatch):
+def test_generate_image(monkeypatch, tmp_path):
     class FakeResponse:
         def __init__(self, data=None, content=b""):
             self.status_code = 200
@@ -71,5 +71,15 @@ def test_generate_image(monkeypatch):
     monkeypatch.setattr(requests, "get", fake_get)
     monkeypatch.setattr(time, "sleep", lambda x: None)
 
-    data = generate_image("p", "ckpt", "", 1, cfg=5, steps=20)
-    assert data == b"image-bytes"
+    paths = generate_image(
+        "p",
+        "ckpt",
+        "",
+        1,
+        cfg=5,
+        steps=20,
+        output_dir=tmp_path,
+        prefix="img",
+    )
+    assert paths == [tmp_path / "img_0.png"]
+    assert (tmp_path / "img_0.png").read_bytes() == b"image-bytes"
