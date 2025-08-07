@@ -2,6 +2,7 @@ import json
 
 import pandas as pd
 import requests
+import streamlit as st
 
 from movie_agent.image_ui import post_to_wordpress
 
@@ -42,3 +43,52 @@ def test_post_to_wordpress(monkeypatch, tmp_path):
     assert [m["filename"] for m in payload["media"]] == ["a.png", "b.png"]
     # Returned URL should be recorded to post_url
     assert row["post_url"] == "https://example.com/post/1"
+
+
+def test_post_to_wordpress_http_error(monkeypatch, tmp_path):
+    img = tmp_path / "a.png"
+    img.write_bytes(b"first")
+
+    class FakeResponse:
+        status_code = 500
+        text = "server error"
+
+        def raise_for_status(self):
+            raise requests.HTTPError("500 Server Error")
+
+    def fake_post(url, *args, **kwargs):
+        return FakeResponse()
+
+    errors = []
+    monkeypatch.setattr(requests, "post", fake_post)
+    monkeypatch.setattr(st, "error", lambda msg: errors.append(msg))
+
+    row = pd.Series({"category": "cats", "tags": "cute", "image_path": str(tmp_path)})
+    assert post_to_wordpress(row) is None
+    assert errors and "WordPress投稿に失敗しました" in errors[0]
+
+
+def test_post_to_wordpress_bad_status(monkeypatch, tmp_path):
+    img = tmp_path / "a.png"
+    img.write_bytes(b"first")
+
+    class FakeResponse:
+        status_code = 202
+        text = "accepted"
+
+        def raise_for_status(self):
+            pass
+
+        def json(self):
+            return {}
+
+    def fake_post(url, *args, **kwargs):
+        return FakeResponse()
+
+    errors = []
+    monkeypatch.setattr(requests, "post", fake_post)
+    monkeypatch.setattr(st, "error", lambda msg: errors.append(msg))
+
+    row = pd.Series({"category": "cats", "tags": "cute", "image_path": str(tmp_path)})
+    assert post_to_wordpress(row) is None
+    assert errors and "WordPress投稿に失敗しました" in errors[0]

@@ -5,6 +5,8 @@ from pathlib import Path
 
 import base64
 import json
+from typing import Optional
+
 import requests
 import streamlit as st
 import pandas as pd
@@ -89,7 +91,7 @@ def rerun_with_message(message: str) -> None:
     st.rerun()
 
 
-def post_to_wordpress(row: pd.Series) -> str:
+def post_to_wordpress(row: pd.Series) -> Optional[str]:
     """Post image metadata and files to a WordPress server."""
     title = f"毎日投稿AI生成画像 {row['category']}"
     tags_list = [t.strip() for t in row.get("tags", "").split(",") if t.strip()]
@@ -112,8 +114,20 @@ def post_to_wordpress(row: pd.Series) -> str:
         "categories": [row["category"]],
         "tags": tags_list,
     }
-    res = requests.post(WORDPRESS_API_URL, json=payload, timeout=10)
-    res.raise_for_status()
+    try:
+        res = requests.post(WORDPRESS_API_URL, json=payload, timeout=10)
+        res.raise_for_status()
+    except requests.HTTPError as e:
+        st.error(f"WordPress投稿に失敗しました: {e}")
+        return None
+    except requests.RequestException as e:
+        st.error(f"WordPress投稿に失敗しました: {e}")
+        return None
+    if res.status_code not in (200, 201):
+        st.error(
+            f"WordPress投稿に失敗しました: {res.status_code} {res.text}"
+        )
+        return None
     try:
         data = res.json()
     except Exception:
@@ -121,11 +135,11 @@ def post_to_wordpress(row: pd.Series) -> str:
             data = json.loads(res.text)
         except Exception:
             st.error(res.text)
-            return ""
+            return None
     url = data.get("url")
     if not url:
         st.error(data)
-        return ""
+        return None
     return url
 
 
