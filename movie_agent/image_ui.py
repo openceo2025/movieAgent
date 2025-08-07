@@ -218,10 +218,10 @@ def main() -> None:
         num_rows="dynamic",
         hide_index=True,
     )
+    st.session_state.image_df = edited_df
     if len(edited_df) > len(st.session_state.last_saved_df):
         save_data(edited_df, CSV_FILE)
         st.session_state.last_saved_df = edited_df.copy()
-    st.session_state.image_df = edited_df
 
     prompt_col, gen_col, post_col, anal_col = st.columns(4)
 
@@ -354,6 +354,7 @@ def main() -> None:
         st.session_state.image_df = df
         if st.session_state.autosave:
             save_data(df, CSV_FILE)
+        rerun_with_message("Page reloaded after generating images")
 
     if post_col.button("Post"):
         df = st.session_state.image_df
@@ -377,6 +378,7 @@ def main() -> None:
         st.session_state.image_df = df
         if st.session_state.autosave:
             save_data(df, CSV_FILE)
+        rerun_with_message("Page reloaded after posting")
 
     if anal_col.button("Analysis"):
         df = st.session_state.image_df
