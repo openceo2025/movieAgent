@@ -73,6 +73,12 @@ def main() -> None:
             st.session_state.comfy_loras,
         ) = list_comfy_models()
 
+    default_checkpoint = (
+        st.session_state.comfy_models[0]
+        if st.session_state.comfy_models
+        else ""
+    )
+
     df = st.session_state.image_df
     if "llm_model" not in df.columns:
         idx = df.columns.get_loc("image_prompt") if "image_prompt" in df.columns else len(df.columns)
@@ -81,9 +87,17 @@ def main() -> None:
         df["llm_model"] = df["llm_model"].fillna(DEFAULT_MODEL)
     for col in ["checkpoint", "comfy_vae"]:
         if col not in df.columns:
-            df[col] = ""
+            if col == "checkpoint":
+                df[col] = default_checkpoint
+            else:
+                df[col] = ""
         else:
-            df[col] = df[col].fillna("")
+            if col == "checkpoint":
+                df[col] = df[col].replace("", default_checkpoint).fillna(
+                    default_checkpoint
+                )
+            else:
+                df[col] = df[col].fillna("")
     if "timeout" not in df.columns:
         df["timeout"] = DEFAULT_TIMEOUT
     else:
@@ -112,7 +126,9 @@ def main() -> None:
             "views_week": st.column_config.NumberColumn("Views Week", min_value=0),
             "views_month": st.column_config.NumberColumn("Views Month", min_value=0),
             "checkpoint": st.column_config.SelectboxColumn(
-                "Checkpoint", options=st.session_state.comfy_models
+                "Checkpoint",
+                options=st.session_state.comfy_models,
+                default=default_checkpoint,
             ),
             "comfy_vae": st.column_config.SelectboxColumn(
                 "VAE", options=st.session_state.comfy_vaes
@@ -184,6 +200,12 @@ def main() -> None:
                 st.warning(f"No image_prompt for row {row.get('id', idx)}")
                 continue
             checkpoint = row.get("checkpoint") or ""
+            if not checkpoint:
+                if st.session_state.comfy_models:
+                    checkpoint = st.session_state.comfy_models[0]
+                else:
+                    st.warning("No ComfyUI checkpoints available")
+                    continue
             vae = row.get("comfy_vae") or ""
             seed_val = int(row.get("seed", DEFAULT_SEED) or DEFAULT_SEED)
             steps_val = int(row.get("steps", DEFAULT_STEPS) or DEFAULT_STEPS)
