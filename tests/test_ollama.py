@@ -24,21 +24,35 @@ def test_list_ollama_models(monkeypatch):
 
 
 def test_generate_story_prompt(monkeypatch):
+    captured = {}
+
     class FakeResponse:
         status_code = 200
-        text = '{"response": "Once upon a time", "analysis": "because of reasons"}'
+        text = (
+            '{"response": "<think>reasoning</think>Once upon a time", '
+            '"analysis": "because of reasons"}'
+        )
 
         def json(self):
-            return {"response": "Once upon a time", "analysis": "because of reasons"}
+            return {
+                "response": "<think>reasoning</think>Once upon a time",
+                "analysis": "because of reasons",
+            }
 
         def raise_for_status(self):
             pass
 
-    def fake_post(*args, **kwargs):
+    def fake_post(url, json=None, **kwargs):
+        captured["url"] = url
+        captured["json"] = json
         return FakeResponse()
 
     monkeypatch.setattr(requests, "post", fake_post)
-    result = generate_story_prompt(
-        "A synopsis", "phi3:mini", 0.7, 10, 0.9
-    )
+    result = generate_story_prompt("A synopsis", "phi3:mini")
     assert result == "Once upon a time"
+    assert captured["json"] == {
+        "model": "phi3:mini",
+        "prompt": "Generate a short story based on this synopsis:\nA synopsis\n",
+        "stream": False,
+        "options": {"temperature": 0.8},
+    }

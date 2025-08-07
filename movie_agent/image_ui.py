@@ -5,6 +5,7 @@ from pathlib import Path
 
 import requests
 import streamlit as st
+import pandas as pd
 from movie_agent.comfyui import (
     list_comfy_models,
     generate_image,
@@ -22,9 +23,6 @@ from movie_agent.csv_manager import (
     slugify,
     unique_path,
     DEFAULT_MODEL,
-    DEFAULT_TEMPERATURE,
-    DEFAULT_MAX_TOKENS,
-    DEFAULT_TOP_P,
     DEFAULT_WIDTH,
     DEFAULT_HEIGHT,
     DEFAULT_SEED,
@@ -141,15 +139,18 @@ def main() -> None:
                         if not model:
                             model = DEFAULT_MODEL
                         # Request the full prompt response without streaming
+                        kwargs = {}
+                        for key in ("temperature", "max_tokens", "top_p"):
+                            val = row.get(key)
+                            if pd.notna(val) and val != "":
+                                kwargs[key] = val
                         prompt = generate_story_prompt(
                             ja,
                             model=model,
-                            temperature=row.get("temperature", DEFAULT_TEMPERATURE),
-                            max_tokens=row.get("max_tokens", DEFAULT_MAX_TOKENS),
-                            top_p=row.get("top_p", DEFAULT_TOP_P),
                             timeout=int(
                                 row.get("timeout", DEFAULT_TIMEOUT) or DEFAULT_TIMEOUT
                             ),
+                            **kwargs,
                         )
                         df.at[idx, "image_prompt"] = prompt
                     except Exception as e:
