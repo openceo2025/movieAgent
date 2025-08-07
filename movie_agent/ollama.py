@@ -77,6 +77,7 @@ def generate_story_prompt(
         res.raise_for_status()
         if stream:
             chunks: list[str] = []
+            reasoning_chunks: list[str] = []
             for line in res.iter_lines():
                 if not line:
                     continue
@@ -89,15 +90,28 @@ def generate_story_prompt(
                 if debug:
                     print("[DEBUG] Stream chunk:", data)
                 chunks.append(data.get("response", ""))
+                reasoning = data.get("thinking") or data.get("analysis")
+                if reasoning:
+                    reasoning_chunks.append(reasoning)
                 if data.get("done"):
                     break
+            reasoning_text = "".join(reasoning_chunks).strip()
+            if debug and reasoning_text:
+                print("[DEBUG] Reasoning trail:", reasoning_text)
             return "".join(chunks).strip()
         else:
             if debug:
                 print("[DEBUG] Raw response:", res.text)
             data = res.json()
             if debug:
-                print("[DEBUG] Parsed response:", data)
+                print("[DEBUG] Parsed response:", json.dumps(data, indent=2))
+            reasoning_parts = []
+            for key in ("thinking", "analysis"):
+                if data.get(key):
+                    reasoning_parts.append(data[key])
+            reasoning_text = "".join(reasoning_parts).strip()
+            if debug and reasoning_text:
+                print("[DEBUG] Reasoning trail:", reasoning_text)
             return data.get("response", "").strip()
     except requests.exceptions.RequestException as e:
         st.error(f"Ollama API error: {e}")

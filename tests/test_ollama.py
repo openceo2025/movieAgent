@@ -26,10 +26,10 @@ def test_list_ollama_models(monkeypatch):
 def test_generate_story_prompt(monkeypatch):
     class FakeResponse:
         status_code = 200
-        text = '{"response": "Once upon a time"}'
+        text = '{"response": "Once upon a time", "analysis": "because of reasons"}'
 
         def json(self):
-            return {"response": "Once upon a time"}
+            return {"response": "Once upon a time", "analysis": "because of reasons"}
 
         def raise_for_status(self):
             pass
