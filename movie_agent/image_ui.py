@@ -3,6 +3,8 @@ import os
 from datetime import datetime
 from pathlib import Path
 
+import base64
+import json
 import requests
 import streamlit as st
 import pandas as pd
@@ -37,6 +39,10 @@ if args.debug:
 BASE_DIR = Path(__file__).resolve().parent.parent
 CSV_FILE = str(BASE_DIR / "images.csv")
 AUTOPOSTER_API_URL = os.getenv("AUTOPOSTER_API_URL", "http://127.0.0.1:9000")
+WORDPRESS_API_URL = os.getenv(
+    "WORDPRESS_API_URL", "http://localhost:8765/wordpress/post"
+)
+WORDPRESS_ACCOUNT = os.getenv("WORDPRESS_ACCOUNT", "")
 DEFAULT_TIMEOUT = 300
 DEFAULT_BATCH = 1
 
@@ -81,6 +87,34 @@ def rerun_with_message(message: str) -> None:
     """Trigger st.rerun() and show a message after reload."""
     st.session_state["just_rerun"] = message
     st.rerun()
+
+
+def post_to_wordpress(row: pd.Series) -> str:
+    """Post image metadata and files to a WordPress server."""
+    title = f"毎日投稿AI生成画像 {row['category']}"
+    tags_list = [t.strip() for t in row.get("tags", "").split(",") if t.strip()]
+    content = ", ".join(tags_list)
+    image_dir = Path(row.get("image_path", ""))
+    if not image_dir.exists():
+        raise FileNotFoundError(f"Image path not found: {image_dir}")
+    media = []
+    for p in sorted(image_dir.glob("*")):
+        if p.is_file():
+            with open(p, "rb") as f:
+                encoded = base64.b64encode(f.read()).decode("utf-8")
+            media.append({"filename": p.name, "data": encoded})
+    payload = {
+        "account": WORDPRESS_ACCOUNT,
+        "title": title,
+        "content": content,
+        "media": media,
+        "categories": [row["category"]],
+        "tags": tags_list,
+    }
+    res = requests.post(WORDPRESS_API_URL, json=payload, timeout=10)
+    res.raise_for_status()
+    data = json.loads(res.text)
+    return data.get("url", "")
 
 
 def main() -> None:
@@ -329,33 +363,17 @@ def main() -> None:
             if not image_path or not os.path.exists(image_path):
                 st.warning(f"No image file for row {row.get('id', idx)}")
                 continue
-            title = row.get("id", "")
-            tags = row.get("tags", "")
             try:
-                files = {"file": open(image_path, "rb")}
-            except Exception:
-                st.error(f"Unable to open image {image_path}")
-                continue
-            try:
-                res = requests.post(
-                    f"{AUTOPOSTER_API_URL}/post",
-                    data={"title": title, "tags": tags},
-                    files=files,
-                    timeout=10,
-                )
-                res.raise_for_status()
-                url = res.json().get("url", "")
+                url = post_to_wordpress(row)
                 if url:
                     df.at[idx, "post_url"] = url
                     st.success(f"Posted: {url}")
                 else:
-                    st.error("No URL returned from autoPoster")
+                    st.error("No URL returned from WordPress")
             except Exception as e:
                 st.error(
                     f"Posting failed for row {row.get('id', idx)}: {e}"
                 )
-            finally:
-                files["file"].close()
         st.session_state.image_df = df
         if st.session_state.autosave:
             save_data(df, CSV_FILE)

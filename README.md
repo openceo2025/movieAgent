@@ -138,7 +138,7 @@ Streamlit UI でフレーム画像を用意した行を選択し、画面下部�
 
 ## Image Generation & Auto-Posting UI
 
-This Streamlit UI manages image-centric posts and **uses the same Streamlit version as the video UI**, so no upgrade is required. It translates Japanese prompts via **Ollama**, renders images with **ComfyUI**, posts them through a local **autoPoster** service, and retrieves view statistics.
+This Streamlit UI manages image-centric posts and **uses the same Streamlit version as the video UI**, so no upgrade is required. It translates Japanese prompts via **Ollama**, renders images with **ComfyUI**, posts them to a WordPress endpoint, and retrieves view statistics via a local **autoPoster** service.
 
 ### Column schema
 Include the following columns in your sheet:
@@ -162,7 +162,7 @@ Additional LLM or ComfyUI parameter columns (model, temperature, steps, seed, wi
 ### Button actions
 - **Generate prompt** – use Ollama to convert `ja_prompt` into an English `image_prompt`.
 - **Generate images** – call ComfyUI to create images in a timestamped folder named `items/<category>_<tags>_<checkpoint>_<YYYYMMDD_HHMMSS>/`. The `image_path` column stores a `file://` URI to this folder, which Streamlit renders as a clickable link.
-- **Post** – upload the image via the local `autoPoster` API and store the resulting `post_url`.
+- **Post** – send images to the configured WordPress API and store the resulting `post_url`.
 - **Analysis** – query the `autoPoster` API to fill `views_yesterday`, `views_week`, and `views_month`.
 
 ### Running
@@ -185,5 +185,7 @@ Set endpoints so the UI can reach local services:
 
 - `OLLAMA_HOST` – base URL of the Ollama API (e.g. `http://localhost:11434`).
 - `COMFYUI_API_URL` – endpoint for the ComfyUI REST API (e.g. `http://127.0.0.1:8188`).
-- `AUTOPOSTER_API_URL` – URL of the local autoPoster service for posting and analytics (e.g. `http://127.0.0.1:9000`).
+- `AUTOPOSTER_API_URL` – URL of the local autoPoster service for analytics (e.g. `http://127.0.0.1:9000`).
+- `WORDPRESS_API_URL` – endpoint for posting to WordPress (e.g. `http://localhost:8765/wordpress/post`).
+- `WORDPRESS_ACCOUNT` – WordPress account name used when posting.
 
