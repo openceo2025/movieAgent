@@ -275,6 +275,7 @@ def main() -> None:
                 timeout = DEFAULT_OLLAMA_TIMEOUT
             timeout = int(timeout)
             if synopsis:
+                # generate_story_prompt now returns the full response in one go
                 prompt = generate_story_prompt(
                     synopsis,
                     model,

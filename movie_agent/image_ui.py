@@ -140,13 +140,16 @@ def main() -> None:
                         model = row.get("llm_model")
                         if not model:
                             model = DEFAULT_MODEL
+                        # Request the full prompt response without streaming
                         prompt = generate_story_prompt(
                             ja,
                             model=model,
                             temperature=row.get("temperature", DEFAULT_TEMPERATURE),
                             max_tokens=row.get("max_tokens", DEFAULT_MAX_TOKENS),
                             top_p=row.get("top_p", DEFAULT_TOP_P),
-                            timeout=int(row.get("timeout", DEFAULT_TIMEOUT) or DEFAULT_TIMEOUT),
+                            timeout=int(
+                                row.get("timeout", DEFAULT_TIMEOUT) or DEFAULT_TIMEOUT
+                            ),
                         )
                         df.at[idx, "image_prompt"] = prompt
                     except Exception as e:

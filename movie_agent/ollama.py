@@ -53,7 +53,6 @@ def generate_story_prompt(
     top_p: float,
     debug: bool | None = None,
     timeout: int = 300,
-    stream: bool = True,
 ) -> str | None:
     """Generate a story prompt using the local Ollama API."""
     if debug is None:
@@ -66,53 +65,28 @@ def generate_story_prompt(
         "temperature": temperature,
         "num_predict": max_tokens,
         "top_p": top_p,
-        "stream": stream,
+        "stream": False,
     }
     if debug:
         print("[DEBUG] Request payload:", payload)
     try:
-        res = requests.post(url, json=payload, timeout=timeout, stream=stream)
+        res = requests.post(url, json=payload, timeout=timeout, stream=False)
         if debug:
             print("[DEBUG] Response status:", res.status_code)
         res.raise_for_status()
-        if stream:
-            chunks: list[str] = []
-            reasoning_chunks: list[str] = []
-            for line in res.iter_lines():
-                if not line:
-                    continue
-                try:
-                    data = json.loads(line.decode("utf-8"))
-                except json.JSONDecodeError as e:
-                    if debug:
-                        print("[DEBUG] JSON decode error:", e, line)
-                    continue
-                if debug:
-                    print("[DEBUG] Stream chunk:", data)
-                chunks.append(data.get("response", ""))
-                reasoning = data.get("thinking") or data.get("analysis")
-                if reasoning:
-                    reasoning_chunks.append(reasoning)
-                if data.get("done"):
-                    break
-            reasoning_text = "".join(reasoning_chunks).strip()
-            if debug and reasoning_text:
-                print("[DEBUG] Reasoning trail:", reasoning_text)
-            return "".join(chunks).strip()
-        else:
-            if debug:
-                print("[DEBUG] Raw response:", res.text)
-            data = res.json()
-            if debug:
-                print("[DEBUG] Parsed response:", json.dumps(data, indent=2))
-            reasoning_parts = []
-            for key in ("thinking", "analysis"):
-                if data.get(key):
-                    reasoning_parts.append(data[key])
-            reasoning_text = "".join(reasoning_parts).strip()
-            if debug and reasoning_text:
-                print("[DEBUG] Reasoning trail:", reasoning_text)
-            return data.get("response", "").strip()
+        if debug:
+            print("[DEBUG] Raw response:", res.text)
+        data = res.json()
+        if debug:
+            print("[DEBUG] Parsed response:", json.dumps(data, indent=2))
+        reasoning_parts = []
+        for key in ("thinking", "analysis"):
+            if data.get(key):
+                reasoning_parts.append(data[key])
+        reasoning_text = "".join(reasoning_parts).strip()
+        if reasoning_text:
+            print("[Reasoning]", reasoning_text)
+        return data.get("response", "").strip()
     except requests.exceptions.RequestException as e:
         st.error(f"Ollama API error: {e}")
     except ValueError as e:
