@@ -151,6 +151,7 @@ Include the following columns in your sheet:
 - `image_prompt`
 - `image_path`
 - `post_url`
+- `wordpress_site`
 - `views_yesterday`
 - `views_week`
 - `views_month`
@@ -158,6 +159,8 @@ Include the following columns in your sheet:
 `llm_model` selects the Ollama model used when translating `ja_prompt` into English.
 Place this column before `image_prompt`; the default model is `gpt-oss:20b`.
 Additional LLM or ComfyUI parameter columns (model, temperature, steps, seed, width, height, etc.) may also be added.
+
+`wordpress_site` specifies which WordPress site to post to; you can supply a site slug or a full API URL. For example, `mysite`.
 
 ### Button actions
 - **Generate prompt** – use Ollama to convert `ja_prompt` into an English `image_prompt`.
