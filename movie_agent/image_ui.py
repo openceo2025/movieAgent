@@ -405,6 +405,9 @@ def main() -> None:
     if post_col.button("Post"):
         df = st.session_state.image_df
         selected = df[df["selected"]]
+        if selected.empty:
+            st.warning("投稿する行を少なくとも1つ選択してください")
+            return
         selected_indices = selected.index.tolist()
         for idx in selected_indices:
             row = df.loc[idx]
