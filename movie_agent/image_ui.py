@@ -172,6 +172,12 @@ def main() -> None:
         df.insert(idx, "llm_model", DEFAULT_MODEL)
     else:
         df["llm_model"] = df["llm_model"].fillna(DEFAULT_MODEL)
+
+    if "wordpress_site" not in df.columns:
+        idx = df.columns.get_loc("post_url") + 1 if "post_url" in df.columns else len(df.columns)
+        df.insert(idx, "wordpress_site", "")
+    else:
+        df["wordpress_site"] = df["wordpress_site"].fillna("")
     for col in ["checkpoint", "comfy_vae"]:
         if col not in df.columns:
             if col == "checkpoint":

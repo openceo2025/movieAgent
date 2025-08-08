@@ -3,6 +3,7 @@ import pandas as pd
 
 from movie_agent.csv_manager import (
     load_data,
+    load_image_data,
     save_data,
     unique_path,
     slugify,
@@ -78,3 +79,10 @@ def test_load_data_defaults_existing_file(tmp_path):
     assert loaded.loc[0, "movie_prompt"] == ""
     assert loaded.loc[0, "batch_count"] == 1
     assert loaded.loc[0, "controlnet_image"] == ""
+
+
+def test_load_image_data_adds_wordpress_site(tmp_path):
+    path = tmp_path / "img.csv"
+    df = load_image_data(path)
+    assert "wordpress_site" in df.columns
+    assert df["wordpress_site"].eq("").all()

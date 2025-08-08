@@ -168,6 +168,7 @@ def load_image_data(path: str) -> pd.DataFrame:
         "image_prompt",
         "image_path",
         "post_url",
+        "wordpress_site",
         "views_yesterday",
         "views_week",
         "views_month",
@@ -199,6 +200,7 @@ def load_image_data(path: str) -> pd.DataFrame:
         df["image_prompt"] = ""
         df["image_path"] = ""
         df["post_url"] = ""
+        df["wordpress_site"] = ""
         df["views_yesterday"] = 0
         df["views_week"] = 0
         df["views_month"] = 0
@@ -255,6 +257,7 @@ def load_image_data(path: str) -> pd.DataFrame:
         df["image_prompt"] = df["image_prompt"].fillna("").astype(str)
         df["image_path"] = df["image_path"].fillna("").astype(str)
         df["post_url"] = df["post_url"].fillna("").astype(str)
+        df["wordpress_site"] = df["wordpress_site"].fillna("").astype(str)
         for vcol in ["views_yesterday", "views_week", "views_month"]:
             df[vcol] = (
                 pd.to_numeric(df[vcol], errors="coerce").fillna(0).astype(int)
