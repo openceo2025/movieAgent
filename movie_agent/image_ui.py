@@ -93,18 +93,26 @@ def rerun_with_message(message: str) -> None:
 
 def post_to_wordpress(row: pd.Series) -> Optional[str]:
     """Post image metadata and files to a WordPress server."""
+
     title = f"毎日投稿AI生成画像 {row['category']}"
     tags_list = [t.strip() for t in row.get("tags", "").split(",") if t.strip()]
     content = ", ".join(tags_list)
     image_dir = Path(row.get("image_path", ""))
     if not image_dir.exists():
         raise FileNotFoundError(f"Image path not found: {image_dir}")
+
+    site = (row.get("wordpress_site") or os.getenv("WORDPRESS_SITE", "")).strip()
+    if not site:
+        st.error("WordPressサイトが指定されていません")
+        return None
+
     media = []
     for p in sorted(image_dir.glob("*")):
         if p.is_file():
             with open(p, "rb") as f:
                 encoded = base64.b64encode(f.read()).decode("utf-8")
             media.append({"filename": p.name, "data": encoded})
+
     account = WORDPRESS_ACCOUNT or "nicchi"
     payload = {
         "account": account,
@@ -114,8 +122,15 @@ def post_to_wordpress(row: pd.Series) -> Optional[str]:
         "categories": [row["category"]],
         "tags": tags_list,
     }
+
+    api_url = WORDPRESS_API_URL
+    if site.startswith("http://") or site.startswith("https://"):
+        api_url = site
+    else:
+        payload["site"] = site
+
     try:
-        resp = requests.post(WORDPRESS_API_URL, json=payload, timeout=10)
+        resp = requests.post(api_url, json=payload, timeout=10)
         resp.raise_for_status()
     except requests.HTTPError as e:
         st.error(f"WordPress投稿に失敗しました: {e}")
