@@ -101,6 +101,7 @@ def post_to_wordpress(row: pd.Series) -> Optional[str]:
     if not image_dir.exists():
         raise FileNotFoundError(f"Image path not found: {image_dir}")
 
+    # The `wordpress_site` field is a key (not a URL) used for account/site lookup.
     site = (row.get("wordpress_site") or os.getenv("WORDPRESS_SITE", "")).strip()
     if not site:
         st.error("WordPressサイトが指定されていません")
@@ -113,7 +114,8 @@ def post_to_wordpress(row: pd.Series) -> Optional[str]:
                 encoded = base64.b64encode(f.read()).decode("utf-8")
             media.append({"filename": p.name, "data": encoded})
 
-    account = WORDPRESS_ACCOUNT or "nicchi"
+    # Use the same site key for the posting account.
+    account = (row.get("wordpress_site") or WORDPRESS_ACCOUNT or "nicchi").strip()
     payload = {
         "account": account,
         "title": title,
@@ -124,10 +126,7 @@ def post_to_wordpress(row: pd.Series) -> Optional[str]:
     }
 
     api_url = WORDPRESS_API_URL
-    if site.startswith("http://") or site.startswith("https://"):
-        api_url = site
-    else:
-        payload["site"] = site
+    payload["site"] = site  # site key (not a full URL)
 
     try:
         resp = requests.post(api_url, json=payload, timeout=10)
@@ -193,6 +192,7 @@ def main() -> None:
         df.insert(idx, "wordpress_site", "")
     else:
         df["wordpress_site"] = df["wordpress_site"].fillna("")
+    # "wordpress_site" values are keys, not full URLs.
     for col in ["checkpoint", "comfy_vae"]:
         if col not in df.columns:
             if col == "checkpoint":
