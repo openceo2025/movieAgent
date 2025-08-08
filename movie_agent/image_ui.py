@@ -412,15 +412,9 @@ def main() -> None:
             save_data(df, CSV_FILE)
         rerun_with_message("Page reloaded after generating images")
 
-    if post_col.button("Post"):
+    if post_col.button("ALL Post"):
         df = st.session_state.image_df
-        selected = df[df["selected"]]
-        if selected.empty:
-            st.warning("投稿する行を少なくとも1つ選択してください")
-            return
-        selected_indices = selected.index.tolist()
-        for idx in selected_indices:
-            row = df.loc[idx]
+        for idx, row in df.iterrows():
             info_msg = f"Processing row index {idx}: {row.to_dict()}"
             print(info_msg)
             st.write(info_msg)
@@ -446,7 +440,6 @@ def main() -> None:
         st.session_state.image_df = df
         if st.session_state.autosave:
             save_data(df, CSV_FILE)
-        # Ensure the page reload occurs only once after processing all selections
         rerun_with_message("Page reloaded after posting")
 
     if anal_col.button("Analysis"):
