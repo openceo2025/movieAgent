@@ -167,7 +167,12 @@ def load_image_data(path: str) -> pd.DataFrame:
         "llm_model",
         "image_prompt",
         "image_path",
+        "post_id",
+        "media_id",
         "post_url",
+        "last_posted_at",
+        "version",
+        "error",
         "wordpress_site",
         "views_yesterday",
         "views_week",
@@ -199,7 +204,12 @@ def load_image_data(path: str) -> pd.DataFrame:
         df["llm_model"] = DEFAULT_MODEL
         df["image_prompt"] = ""
         df["image_path"] = ""
+        df["post_id"] = 0
+        df["media_id"] = 0
         df["post_url"] = ""
+        df["last_posted_at"] = ""
+        df["version"] = 0
+        df["error"] = ""
         df["wordpress_site"] = ""
         df["views_yesterday"] = 0
         df["views_week"] = 0
@@ -221,7 +231,14 @@ def load_image_data(path: str) -> pd.DataFrame:
         for c in missing_cols:
             if c in ["selected", "nsfw"]:
                 df[c] = False
-            elif c in ["views_yesterday", "views_week", "views_month"]:
+            elif c in [
+                "views_yesterday",
+                "views_week",
+                "views_month",
+                "post_id",
+                "media_id",
+                "version",
+            ]:
                 df[c] = 0
             else:
                 df[c] = ""
@@ -256,9 +273,18 @@ def load_image_data(path: str) -> pd.DataFrame:
         df["llm_model"] = df["llm_model"].fillna(DEFAULT_MODEL).astype(str)
         df["image_prompt"] = df["image_prompt"].fillna("").astype(str)
         df["image_path"] = df["image_path"].fillna("").astype(str)
+        df["post_id"] = pd.to_numeric(df["post_id"], errors="coerce").fillna(0).astype(int)
+        df["media_id"] = pd.to_numeric(df["media_id"], errors="coerce").fillna(0).astype(int)
         df["post_url"] = df["post_url"].fillna("").astype(str)
+        df["last_posted_at"] = df["last_posted_at"].fillna("").astype(str)
+        df["version"] = pd.to_numeric(df["version"], errors="coerce").fillna(0).astype(int)
+        df["error"] = df["error"].fillna("").astype(str)
         df["wordpress_site"] = df["wordpress_site"].fillna("").astype(str)
-        for vcol in ["views_yesterday", "views_week", "views_month"]:
+        for vcol in [
+            "views_yesterday",
+            "views_week",
+            "views_month",
+        ]:
             df[vcol] = (
                 pd.to_numeric(df[vcol], errors="coerce").fillna(0).astype(int)
             )
