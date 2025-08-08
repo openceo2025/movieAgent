@@ -1,6 +1,7 @@
 import json
 
 import pandas as pd
+import pytest
 import requests
 import streamlit as st
 
@@ -33,7 +34,14 @@ def test_post_to_wordpress(monkeypatch, tmp_path):
 
     monkeypatch.setattr(requests, "post", fake_post)
 
-    row = pd.Series({"category": "cats", "tags": "cute,funny", "image_path": str(tmp_path)})
+    row = pd.Series(
+        {
+            "category": "cats",
+            "tags": "cute,funny",
+            "image_path": str(tmp_path),
+            "wordpress_site": "mysite",
+        }
+    )
     url = post_to_wordpress(row)
     row["post_url"] = url
 
@@ -44,6 +52,8 @@ def test_post_to_wordpress(monkeypatch, tmp_path):
     assert payload["content"] == "cute, funny"
     # Media should list images in sorted order
     assert [m["filename"] for m in payload["media"]] == ["a.png", "b.png"]
+    # Site should be forwarded in payload
+    assert payload["site"] == "mysite"
     # Returned URL should be recorded to post_url
     assert row["post_url"] == "https://example.com/post/1"
 
@@ -66,7 +76,14 @@ def test_post_to_wordpress_http_error(monkeypatch, tmp_path):
     monkeypatch.setattr(requests, "post", fake_post)
     monkeypatch.setattr(st, "error", lambda msg: errors.append(msg))
 
-    row = pd.Series({"category": "cats", "tags": "cute", "image_path": str(tmp_path)})
+    row = pd.Series(
+        {
+            "category": "cats",
+            "tags": "cute",
+            "image_path": str(tmp_path),
+            "wordpress_site": "mysite",
+        }
+    )
     assert post_to_wordpress(row) is None
     assert errors and "WordPress投稿に失敗しました" in errors[0]
 
@@ -92,7 +109,14 @@ def test_post_to_wordpress_bad_status(monkeypatch, tmp_path):
     monkeypatch.setattr(requests, "post", fake_post)
     monkeypatch.setattr(st, "error", lambda msg: errors.append(msg))
 
-    row = pd.Series({"category": "cats", "tags": "cute", "image_path": str(tmp_path)})
+    row = pd.Series(
+        {
+            "category": "cats",
+            "tags": "cute",
+            "image_path": str(tmp_path),
+            "wordpress_site": "mysite",
+        }
+    )
     assert post_to_wordpress(row) is None
     assert errors and "WordPress投稿に失敗しました" in errors[0]
 
@@ -118,6 +142,30 @@ def test_post_to_wordpress_no_url(monkeypatch, tmp_path):
     monkeypatch.setattr(requests, "post", fake_post)
     monkeypatch.setattr(st, "warning", lambda msg: warnings.append(msg))
 
-    row = pd.Series({"category": "cats", "tags": "cute", "image_path": str(tmp_path)})
+    row = pd.Series(
+        {
+            "category": "cats",
+            "tags": "cute",
+            "image_path": str(tmp_path),
+            "wordpress_site": "mysite",
+        }
+    )
     assert post_to_wordpress(row) is None
     assert warnings and "WordPressから投稿URLが返されませんでした" in warnings[0]
+
+
+def test_post_to_wordpress_missing_site(monkeypatch, tmp_path):
+    img = tmp_path / "a.png"
+    img.write_bytes(b"first")
+
+    errors = []
+    monkeypatch.setattr(st, "error", lambda msg: errors.append(msg))
+    monkeypatch.setattr(
+        requests,
+        "post",
+        lambda *a, **k: pytest.fail("post should not be called when site missing"),
+    )
+
+    row = pd.Series({"category": "cats", "tags": "cute", "image_path": str(tmp_path)})
+    assert post_to_wordpress(row) is None
+    assert errors and "WordPressサイトが指定されていません" in errors[0]
