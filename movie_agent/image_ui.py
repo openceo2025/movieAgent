@@ -405,7 +405,9 @@ def main() -> None:
     if post_col.button("Post"):
         df = st.session_state.image_df
         selected = df[df["selected"]]
-        for idx, row in selected.iterrows():
+        selected_indices = selected.index.tolist()
+        for idx in selected_indices:
+            row = df.loc[idx]
             image_path = row.get("image_path", "")
             if not image_path or not os.path.exists(image_path):
                 st.warning(f"No image file for row {row.get('id', idx)}")
@@ -415,10 +417,11 @@ def main() -> None:
                 if url:
                     df.at[idx, "post_url"] = url
                     st.success(f"Posted: {url}")
+                    print(f"[INFO] Posted: {url}")
             except Exception as e:
-                st.error(
-                    f"Posting failed for row {row.get('id', idx)}: {e}"
-                )
+                message = f"Posting failed for row {row.get('id', idx)}: {e}"
+                st.error(message)
+                print(f"[ERROR] {message}")
         st.session_state.image_df = df
         if st.session_state.autosave:
             save_data(df, CSV_FILE)
