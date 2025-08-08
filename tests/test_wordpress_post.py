@@ -58,6 +58,45 @@ def test_post_to_wordpress(monkeypatch, tmp_path):
     assert row["post_url"] == "https://example.com/post/1"
 
 
+def test_post_to_wordpress_payload_has_site(monkeypatch, tmp_path):
+    img = tmp_path / "a.png"
+    img.write_bytes(b"first")
+
+    captured = {}
+
+    class FakeResponse:
+        def __init__(self):
+            self.status_code = 200
+            self.text = json.dumps({"url": "https://example.com/post/1"})
+
+        def raise_for_status(self):
+            pass
+
+        def json(self):
+            return json.loads(self.text)
+
+    def fake_post(url, *args, **kwargs):
+        captured["payload"] = kwargs.get("json")
+        return FakeResponse()
+
+    monkeypatch.setattr(requests, "post", fake_post)
+
+    row = pd.Series(
+        {
+            "category": "cats",
+            "tags": "cute",
+            "image_path": str(tmp_path),
+            "wordpress_site": "mysite",
+        }
+    )
+
+    post_to_wordpress(row)
+
+    payload = captured["payload"]
+    assert "site" in payload
+    assert payload["site"] == "mysite"
+
+
 def test_post_to_wordpress_http_error(monkeypatch, tmp_path):
     img = tmp_path / "a.png"
     img.write_bytes(b"first")
