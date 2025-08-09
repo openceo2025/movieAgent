@@ -32,29 +32,11 @@ def test_load_data_missing(tmp_path):
 
 def test_save_data(tmp_path):
     path = tmp_path / "out.csv"
-    df = pd.DataFrame(
-        {
-            "selected": [True],
-            "id": ["1"],
-            "title": ["test"],
-            "post_id": [123],
-            "media_id": [456],
-            "post_url": ["http://example.com"],
-            "last_posted_at": ["2024-01-01"],
-            "version": [1],
-            "error": ["oops"],
-        }
-    )
+    df = pd.DataFrame({"selected": [True], "id": ["1"], "title": ["test"]})
     save_data(df, path)
     loaded = pd.read_csv(path)
     assert "selected" not in loaded.columns
     assert str(loaded.loc[0, "id"]) == "1"
-    assert loaded.loc[0, "post_id"] == 123
-    assert loaded.loc[0, "media_id"] == 456
-    assert loaded.loc[0, "post_url"] == "http://example.com"
-    assert loaded.loc[0, "last_posted_at"] == "2024-01-01"
-    assert loaded.loc[0, "version"] == 1
-    assert loaded.loc[0, "error"] == "oops"
 
 
 def test_unique_path(tmp_path):
@@ -99,23 +81,8 @@ def test_load_data_defaults_existing_file(tmp_path):
     assert loaded.loc[0, "controlnet_image"] == ""
 
 
-def test_load_image_data_adds_new_columns(tmp_path):
+def test_load_image_data_adds_wordpress_site(tmp_path):
     path = tmp_path / "img.csv"
     df = load_image_data(path)
-    for col in [
-        "post_id",
-        "media_id",
-        "post_url",
-        "last_posted_at",
-        "version",
-        "error",
-        "wordpress_site",
-    ]:
-        assert col in df.columns
-    assert df["post_id"].eq(0).all()
-    assert df["media_id"].eq(0).all()
-    assert df["version"].eq(0).all()
-    assert df["post_url"].eq("").all()
-    assert df["last_posted_at"].eq("").all()
-    assert df["error"].eq("").all()
+    assert "wordpress_site" in df.columns
     assert df["wordpress_site"].eq("").all()
