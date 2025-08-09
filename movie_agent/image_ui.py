@@ -45,6 +45,7 @@ WORDPRESS_API_URL = os.getenv(
     "WORDPRESS_API_URL", "http://localhost:8765/wordpress/post"
 )
 WORDPRESS_ACCOUNT = os.getenv("WORDPRESS_ACCOUNT", "")
+WORDPRESS_API_BASE = WORDPRESS_API_URL.rsplit("/", 1)[0]
 DEFAULT_TIMEOUT = 300
 DEFAULT_BATCH = 1
 
@@ -89,6 +90,79 @@ def rerun_with_message(message: str) -> None:
     """Trigger st.rerun() and show a message after reload."""
     st.session_state["just_rerun"] = message
     st.rerun()
+
+
+def upload_media(image_file, site: str) -> int:
+    """Upload an image file to WordPress and return the media ID."""
+
+    url = f"{WORDPRESS_API_BASE}/media"
+    filename = os.path.basename(getattr(image_file, "name", "image"))
+    files = {"file": (filename, image_file)}
+    data = {"site": site}
+    resp = requests.post(url, files=files, data=data, timeout=10)
+    resp.raise_for_status()
+    media_id = resp.json().get("id")
+    if media_id is None:
+        raise ValueError("media_id not returned")
+    return media_id
+
+
+def create_post(row: pd.Series, media_id: int, site: str):
+    """Create a new WordPress post and return (post_id, post_url)."""
+
+    title = f"毎日投稿AI生成画像 {row['category']}"
+    tags_list = [t.strip() for t in row.get("tags", "").split(",") if t.strip()]
+    content = ", ".join(tags_list)
+    account = (row.get("wordpress_site") or WORDPRESS_ACCOUNT or "nicchi").strip()
+    payload = {
+        "site": site,
+        "account": account,
+        "title": title,
+        "content": content,
+        "categories": [row["category"]],
+        "tags": tags_list,
+        "media_id": media_id,
+    }
+    url = f"{WORDPRESS_API_BASE}/post"
+    resp = requests.post(url, json=payload, timeout=10)
+    resp.raise_for_status()
+    data = resp.json()
+    return data.get("id", 0), data.get("url", "")
+
+
+def update_post(post_id: int, row: pd.Series, media_id: int, site: str) -> str:
+    """Update an existing WordPress post and return the new URL."""
+
+    title = f"毎日投稿AI生成画像 {row['category']}"
+    tags_list = [t.strip() for t in row.get("tags", "").split(",") if t.strip()]
+    content = ", ".join(tags_list)
+    account = (row.get("wordpress_site") or WORDPRESS_ACCOUNT or "nicchi").strip()
+    payload = {
+        "site": site,
+        "account": account,
+        "title": title,
+        "content": content,
+        "categories": [row["category"]],
+        "tags": tags_list,
+        "media_id": media_id,
+    }
+    url = f"{WORDPRESS_API_BASE}/post/{post_id}"
+    resp = requests.put(url, json=payload, timeout=10)
+    resp.raise_for_status()
+    return resp.json().get("url", "")
+
+
+def safe_delete_media(media_id: int, site: str) -> None:
+    """Delete a media item from WordPress, ignoring failures."""
+
+    if not media_id:
+        return
+    url = f"{WORDPRESS_API_BASE}/media/{media_id}"
+    try:
+        resp = requests.delete(url, json={"site": site}, timeout=10)
+        resp.raise_for_status()
+    except requests.RequestException as e:
+        st.warning(f"Failed to delete media {media_id}: {e}")
 
 
 def post_to_wordpress(row: pd.Series) -> Optional[str]:
@@ -431,46 +505,55 @@ def main() -> None:
             save_data(df, CSV_FILE)
         rerun_with_message("Page reloaded after generating images")
 
-    if post_col.button("Post"):
-        mode = st.session_state.get("post_mode", "update")
-        delete_old = st.session_state.get("delete_old_media", False)
+    if post_col.button("Post (overwrite)"):
         df = st.session_state.image_df
-        selected = df[df["selected"]]
-        if selected.empty:
+        selected_indices = df.index[df["selected"]].tolist()
+        if not selected_indices:
             st.warning("投稿する行を少なくとも1つ選択してください")
-            return
-        selected_indices = selected.index.tolist()
-        for idx in selected_indices:
-            row = df.loc[idx]
-            info_msg = (
-                f"Processing row index {idx} (mode={mode}, delete_old={delete_old}): {row.to_dict()}"
-            )
-            print(info_msg)
-            st.write(info_msg)
-            image_path = row.get("image_path", "")
-            if not image_path or not os.path.exists(image_path):
-                st.warning(f"No image file for row {row.get('id', idx)}")
-                continue
-            try:
-                url = post_to_wordpress(row)
-                result_msg = (
-                    f"post_to_wordpress returned {url} for row {row.get('id', idx)}"
-                )
-                print(result_msg)
-                st.write(result_msg)
-                if url:
-                    df.at[idx, "post_url"] = url
-                    st.success(f"Posted: {url}")
-                    print(f"[INFO] Posted: {url}")
-            except Exception as e:
-                message = f"Posting failed for row {row.get('id', idx)}: {e}"
-                st.error(message)
-                print(f"[ERROR] {message}")
-        st.session_state.image_df = df
-        if st.session_state.autosave:
-            save_data(df, CSV_FILE)
-        # Ensure the page reload occurs only once after processing all selections
-        rerun_with_message("Page reloaded after posting")
+        else:
+            mode = st.session_state.get("post_mode", "update")
+            delete_old = st.session_state.get("delete_old_media", False)
+            success_count = 0
+            for idx in selected_indices:
+                row = df.loc[idx]
+                site = (row.get("wordpress_site") or os.getenv("WORDPRESS_SITE", "")).strip()
+                image_path = row.get("image_path", "")
+                if not site:
+                    err = "WordPressサイトが指定されていません"
+                    st.error(err)
+                    df.at[idx, "error"] = err
+                    continue
+                if not image_path or not os.path.exists(image_path):
+                    st.warning(f"No image file for row {row.get('id', idx)}")
+                    continue
+                try:
+                    with open(image_path, "rb") as f:
+                        media_id = upload_media(f, site)
+                    old_media_id = row.get("media_id")
+                    if mode == "update" and row.get("post_id"):
+                        post_url = update_post(int(row.get("post_id")), row, media_id, site)
+                        post_id = row.get("post_id")
+                    else:
+                        post_id, post_url = create_post(row, media_id, site)
+                    if delete_old and old_media_id:
+                        safe_delete_media(int(old_media_id), site)
+                    df.at[idx, "media_id"] = media_id
+                    if post_id:
+                        df.at[idx, "post_id"] = post_id
+                    df.at[idx, "post_url"] = post_url
+                    df.at[idx, "last_posted_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    df.at[idx, "version"] = int(row.get("version", 0)) + 1
+                    df.at[idx, "error"] = ""
+                    st.toast(f"Posted row {row.get('id', idx)}")
+                    success_count += 1
+                except Exception as e:
+                    err = str(e)
+                    df.at[idx, "error"] = err
+                    st.error(f"Posting failed for row {row.get('id', idx)}: {e}")
+            st.session_state.image_df = df
+            if st.session_state.autosave:
+                save_data(df, CSV_FILE)
+            st.write(f"Posting finished: {success_count}/{len(selected_indices)} succeeded")
 
     if anal_col.button("Analysis"):
         df = st.session_state.image_df
