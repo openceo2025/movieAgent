@@ -29,7 +29,6 @@ from movie_agent.csv_manager import (
     DEFAULT_WIDTH,
     DEFAULT_HEIGHT,
     DEFAULT_SEED,
-    normalize_df,
 )
 
 # Parse CLI arguments passed after `--` when launching via Streamlit
@@ -311,7 +310,6 @@ def main() -> None:
             df[col] = default
         else:
             df[col] = df[col].fillna(default)
-    df = normalize_df(df)
     st.session_state.image_df = df
 
     st.write("### Image Spreadsheet")
@@ -329,20 +327,12 @@ def main() -> None:
             ),
             "image_prompt": st.column_config.TextColumn("Image Prompt"),
             "image_path": st.column_config.LinkColumn("Image Path"),
-            "post_id": st.column_config.NumberColumn(
-                "Post ID", format="%d", step=1, disabled=True
-            ),
-            "media_id": st.column_config.NumberColumn(
-                "Media ID", format="%d", step=1, disabled=True
-            ),
-            "post_url": st.column_config.LinkColumn("Post URL", disabled=True),
-            "last_posted_at": st.column_config.TextColumn(
-                "Last Posted At", disabled=True
-            ),
-            "version": st.column_config.NumberColumn(
-                "Version", format="%d", step=1, disabled=True
-            ),
-            "error": st.column_config.TextColumn("Error", disabled=True),
+            "post_id": st.column_config.TextColumn("Post ID"),
+            "media_id": st.column_config.TextColumn("Media ID"),
+            "post_url": st.column_config.TextColumn("Post URL"),
+            "last_posted_at": st.column_config.TextColumn("Last Posted At"),
+            "version": st.column_config.TextColumn("Version"),
+            "error": st.column_config.TextColumn("Error"),
             "views_yesterday": st.column_config.NumberColumn(
                 "Views Yesterday", min_value=0
             ),

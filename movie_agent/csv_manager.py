@@ -34,29 +34,6 @@ def unique_path(path: str) -> str:
     return candidate
 
 
-def normalize_df(df: pd.DataFrame) -> pd.DataFrame:
-    """Normalize DataFrame types for image CSV handling.
-
-    Ensures numeric identifier and view count columns use nullable
-    integers and that the ``selected`` flag is a proper boolean.
-    """
-
-    int_cols = [
-        "post_id",
-        "media_id",
-        "version",
-        "views_yesterday",
-        "views_week",
-        "views_month",
-    ]
-    for col in int_cols:
-        if col in df.columns:
-            df[col] = pd.to_numeric(df[col], errors="coerce").astype("Int64")
-    if "selected" in df.columns:
-        df["selected"] = df["selected"].fillna(False).astype(bool)
-    return df
-
-
 def load_data(path: str) -> pd.DataFrame:
     """Load spreadsheet data from ``path``.
 
@@ -285,7 +262,9 @@ def load_image_data(path: str) -> pd.DataFrame:
             df["width"] = DEFAULT_WIDTH
         if "height" in missing_cols:
             df["height"] = DEFAULT_HEIGHT
+
         df = df[columns]
+        df["selected"] = df["selected"].fillna(False).astype(bool)
         df["nsfw"] = df["nsfw"].fillna(False).astype(bool)
         df["id"] = df["id"].astype(str)
         df["category"] = df["category"].fillna("").astype(str)
@@ -294,10 +273,20 @@ def load_image_data(path: str) -> pd.DataFrame:
         df["llm_model"] = df["llm_model"].fillna(DEFAULT_MODEL).astype(str)
         df["image_prompt"] = df["image_prompt"].fillna("").astype(str)
         df["image_path"] = df["image_path"].fillna("").astype(str)
+        df["post_id"] = pd.to_numeric(df["post_id"], errors="coerce").fillna(0).astype(int)
+        df["media_id"] = pd.to_numeric(df["media_id"], errors="coerce").fillna(0).astype(int)
         df["post_url"] = df["post_url"].fillna("").astype(str)
         df["last_posted_at"] = df["last_posted_at"].fillna("").astype(str)
+        df["version"] = pd.to_numeric(df["version"], errors="coerce").fillna(0).astype(int)
         df["error"] = df["error"].fillna("").astype(str)
         df["wordpress_site"] = df["wordpress_site"].fillna("").astype(str)
-    df = normalize_df(df)
+        for vcol in [
+            "views_yesterday",
+            "views_week",
+            "views_month",
+        ]:
+            df[vcol] = (
+                pd.to_numeric(df[vcol], errors="coerce").fillna(0).astype(int)
+            )
     return df
 
