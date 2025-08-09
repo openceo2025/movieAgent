@@ -130,3 +130,30 @@ def test_load_image_data_defaults_existing(tmp_path):
     assert loaded.loc[0, "last_posted_at"] == ""
     assert loaded.loc[0, "version"] == 0
     assert loaded.loc[0, "error"] == ""
+
+
+def test_load_image_data_types(tmp_path):
+    path = tmp_path / "img.csv"
+    pd.DataFrame(
+        {
+            "post_id": ["1", ""],
+            "media_id": ["bad", 2],
+            "version": [pd.NA, 3],
+            "views_yesterday": [4, ""],
+            "views_week": ["5", "oops"],
+            "views_month": [6, None],
+            "selected": ["", True],
+        }
+    ).to_csv(path, index=False)
+    df = load_image_data(path)
+    for col in [
+        "post_id",
+        "media_id",
+        "version",
+        "views_yesterday",
+        "views_week",
+        "views_month",
+    ]:
+        assert str(df[col].dtype) == "Int64"
+    assert df["selected"].dtype == bool
+    assert bool(df.loc[0, "selected"]) is False
