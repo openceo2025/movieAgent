@@ -224,6 +224,18 @@ def main() -> None:
         df["cfg"] = DEFAULT_CFG
     else:
         df["cfg"] = df["cfg"].replace("", DEFAULT_CFG).fillna(DEFAULT_CFG)
+
+    for col, default in [
+        ("post_id", 0),
+        ("media_id", 0),
+        ("last_posted_at", ""),
+        ("version", 0),
+        ("error", ""),
+    ]:
+        if col not in df.columns:
+            df[col] = default
+        else:
+            df[col] = df[col].fillna(default)
     st.session_state.image_df = df
 
     st.write("### Image Spreadsheet")
@@ -241,7 +253,12 @@ def main() -> None:
             ),
             "image_prompt": st.column_config.TextColumn("Image Prompt"),
             "image_path": st.column_config.LinkColumn("Image Path"),
+            "post_id": st.column_config.TextColumn("Post ID"),
+            "media_id": st.column_config.TextColumn("Media ID"),
             "post_url": st.column_config.TextColumn("Post URL"),
+            "last_posted_at": st.column_config.TextColumn("Last Posted At"),
+            "version": st.column_config.TextColumn("Version"),
+            "error": st.column_config.TextColumn("Error"),
             "views_yesterday": st.column_config.NumberColumn(
                 "Views Yesterday", min_value=0
             ),
@@ -274,6 +291,8 @@ def main() -> None:
         st.session_state.last_saved_df = edited_df.copy()
 
     prompt_col, gen_col, post_col, anal_col = st.columns(4)
+    post_col.radio("Post mode", ["update", "new_post"], key="post_mode")
+    post_col.checkbox("Delete old media after replace", key="delete_old_media")
 
     if prompt_col.button("Generate prompt"):
         df = st.session_state.image_df.copy()
@@ -413,6 +432,8 @@ def main() -> None:
         rerun_with_message("Page reloaded after generating images")
 
     if post_col.button("Post"):
+        mode = st.session_state.get("post_mode", "update")
+        delete_old = st.session_state.get("delete_old_media", False)
         df = st.session_state.image_df
         selected = df[df["selected"]]
         if selected.empty:
@@ -421,7 +442,9 @@ def main() -> None:
         selected_indices = selected.index.tolist()
         for idx in selected_indices:
             row = df.loc[idx]
-            info_msg = f"Processing row index {idx}: {row.to_dict()}"
+            info_msg = (
+                f"Processing row index {idx} (mode={mode}, delete_old={delete_old}): {row.to_dict()}"
+            )
             print(info_msg)
             st.write(info_msg)
             image_path = row.get("image_path", "")
