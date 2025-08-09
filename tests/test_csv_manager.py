@@ -119,3 +119,14 @@ def test_load_image_data_adds_new_columns(tmp_path):
     assert df["last_posted_at"].eq("").all()
     assert df["error"].eq("").all()
     assert df["wordpress_site"].eq("").all()
+
+
+def test_load_image_data_defaults_existing(tmp_path):
+    path = tmp_path / "img.csv"
+    pd.DataFrame({"category": ["cats"]}).to_csv(path, index=False)
+    loaded = load_image_data(path)
+    assert loaded.loc[0, "post_id"] == 0
+    assert loaded.loc[0, "media_id"] == 0
+    assert loaded.loc[0, "last_posted_at"] == ""
+    assert loaded.loc[0, "version"] == 0
+    assert loaded.loc[0, "error"] == ""

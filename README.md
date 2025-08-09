@@ -150,7 +150,12 @@ Include the following columns in your sheet:
 - `llm_model`
 - `image_prompt`
 - `image_path`
+- `post_id`
+- `media_id`
 - `post_url`
+- `last_posted_at`
+- `version`
+- `error`
 - `wordpress_site`
 - `views_yesterday`
 - `views_week`
@@ -162,10 +167,12 @@ Additional LLM or ComfyUI parameter columns (model, temperature, steps, seed, wi
 
 `wordpress_site` specifies which WordPress site to post to; you can supply a site slug or a full API URL. For example, `mysite`.
 
+`post_id` and `media_id` store the identifiers returned by WordPress, while `last_posted_at` records the timestamp of the last successful post. `version` is incremented each time the row is posted, and `error` keeps the most recent error message, if any.
+
 ### Button actions
 - **Generate prompt** – use Ollama to convert `ja_prompt` into an English `image_prompt`.
 - **Generate images** – call ComfyUI to create images in a timestamped folder named `items/<category>_<tags>_<checkpoint>_<YYYYMMDD_HHMMSS>/`. The `image_path` column stores a `file://` URI to this folder, which Streamlit renders as a clickable link.
-- **Post** – send images to the configured WordPress API and store the resulting `post_url`.
+- **Post** – send images to the configured WordPress API and store the resulting `post_url`. Choose between `update` (replace an existing post using `post_id`) and `new_post` (always create a new post). Enable **Delete old media after replace** to remove the previous `media_id` when updating.
 - **Analysis** – query the `autoPoster` API to fill `views_yesterday`, `views_week`, and `views_month`.
 
 ### Running
