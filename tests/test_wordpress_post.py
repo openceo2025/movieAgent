@@ -1,5 +1,6 @@
 import json
 
+import os
 import pandas as pd
 import pytest
 import requests
@@ -208,3 +209,113 @@ def test_post_to_wordpress_missing_site(monkeypatch, tmp_path):
     row = pd.Series({"category": "cats", "tags": "cute", "image_path": str(tmp_path)})
     assert post_to_wordpress(row) is None
     assert errors and "WordPressサイトが指定されていません" in errors[0]
+
+
+def test_post_multiple_rows_account_site(monkeypatch, tmp_path):
+    from movie_agent import image_ui
+
+    # create image files for two rows
+    img1 = tmp_path / "1.png"
+    img1.write_bytes(b"1")
+    img2 = tmp_path / "2.png"
+    img2.write_bytes(b"2")
+
+    df = pd.DataFrame(
+        {
+            "selected": [True, True],
+            "id": ["1", "2"],
+            "image_path": [str(img1), str(img2)],
+            "wordpress_site": ["siteA", "siteB"],
+            "post_id": [10, 0],
+            "media_id": [0, 0],
+            "version": [0, 0],
+        }
+    )
+
+    class FakeSt:
+        def __init__(self):
+            self.session_state = {
+                "image_df": df.copy(),
+                "post_mode": "update",
+                "delete_old_media": False,
+            }
+            self.toasts = []
+
+        def toast(self, msg):
+            self.toasts.append(msg)
+
+        def error(self, msg):
+            pass
+
+        def warning(self, msg):
+            pass
+
+    fake_st = FakeSt()
+    monkeypatch.setattr(image_ui, "st", fake_st)
+
+    calls = {"upload": [], "update": [], "create": []}
+
+    def fake_upload_media(f, site):
+        calls["upload"].append(site)
+        return 100 + len(calls["upload"])
+
+    def fake_update_post(post_id, row, media_id, site):
+        account = (row.get("wordpress_site") or image_ui.WORDPRESS_ACCOUNT or "nicchi").strip()
+        calls["update"].append((post_id, site, account))
+        return f"http://example.com/{site}/{post_id}"
+
+    def fake_create_post(row, media_id, site):
+        account = (row.get("wordpress_site") or image_ui.WORDPRESS_ACCOUNT or "nicchi").strip()
+        calls["create"].append((site, account))
+        return 200 + len(calls["create"]), f"http://example.com/{site}/new"
+
+    class DummyDT:
+        @classmethod
+        def now(cls):
+            class D:
+                def strftime(self, fmt):
+                    return "2024-01-01 00:00:00"
+
+            return D()
+
+    monkeypatch.setattr(image_ui, "upload_media", fake_upload_media)
+    monkeypatch.setattr(image_ui, "update_post", fake_update_post)
+    monkeypatch.setattr(image_ui, "create_post", fake_create_post)
+    monkeypatch.setattr(image_ui, "safe_delete_media", lambda *a, **k: None)
+    monkeypatch.setattr(image_ui, "datetime", DummyDT)
+
+    # replicate posting loop for selected rows
+    df2 = fake_st.session_state["image_df"]
+    selected_indices = df2.index[df2["selected"]].tolist()
+    mode = fake_st.session_state.get("post_mode", "update")
+    delete_old = fake_st.session_state.get("delete_old_media", False)
+    for idx in selected_indices:
+        row = df2.loc[idx]
+        site = (row.get("wordpress_site") or os.getenv("WORDPRESS_SITE", "")).strip()
+        image_path = row.get("image_path", "")
+        if not site or not image_path:
+            continue
+        with open(image_path, "rb") as f:
+            media_id = image_ui.upload_media(f, site)
+        old_media_id = row.get("media_id")
+        if mode == "update" and row.get("post_id"):
+            post_url = image_ui.update_post(int(row.get("post_id")), row, media_id, site)
+            post_id = row.get("post_id")
+        else:
+            post_id, post_url = image_ui.create_post(row, media_id, site)
+        if delete_old and old_media_id:
+            image_ui.safe_delete_media(int(old_media_id), site)
+        df2.at[idx, "media_id"] = media_id
+        if post_id:
+            df2.at[idx, "post_id"] = post_id
+        df2.at[idx, "post_url"] = post_url
+        df2.at[idx, "last_posted_at"] = image_ui.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        df2.at[idx, "version"] = int(row.get("version", 0)) + 1
+        df2.at[idx, "error"] = ""
+        fake_st.toast(f"Posted row {row.get('id', idx)}")
+
+    fake_st.session_state["image_df"] = df2
+
+    assert calls["upload"] == ["siteA", "siteB"]
+    assert calls["update"] == [(10, "siteA", "siteA")]
+    assert calls["create"] == [("siteB", "siteB")]
