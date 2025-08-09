@@ -430,11 +430,6 @@ def main() -> None:
                 continue
             try:
                 url = post_to_wordpress(row)
-                result_msg = (
-                    f"post_to_wordpress returned {url} for row {row.get('id', idx)}"
-                )
-                print(result_msg)
-                st.write(result_msg)
                 if url:
                     df.at[idx, "post_url"] = url
                     st.success(f"Posted: {url}")
@@ -446,7 +441,6 @@ def main() -> None:
         st.session_state.image_df = df
         if st.session_state.autosave:
             save_data(df, CSV_FILE)
-        # Ensure the page reload occurs only once after processing all selections
         rerun_with_message("Page reloaded after posting")
 
     if anal_col.button("Analysis"):
