@@ -128,18 +128,8 @@ def post_to_wordpress(row: pd.Series) -> Optional[str]:
     api_url = WORDPRESS_API_URL
     payload["site"] = site  # site key (not a full URL)
 
-    log_payload = {**payload, "media": [m["filename"] for m in media]}
-    print(f"[DEBUG] POST {api_url} with payload: {log_payload}")
-    st.write(f"POST {api_url} with payload: {log_payload}")
-
     try:
         resp = requests.post(api_url, json=payload, timeout=10)
-        print(
-            f"[DEBUG] WordPress response status: {resp.status_code}, body: {resp.text}"
-        )
-        st.write(
-            f"WordPress response status: {resp.status_code}, body: {resp.text}"
-        )
         resp.raise_for_status()
     except requests.HTTPError as e:
         st.error(f"WordPress投稿に失敗しました: {e}")
@@ -421,9 +411,6 @@ def main() -> None:
         selected_indices = selected.index.tolist()
         for idx in selected_indices:
             row = df.loc[idx]
-            info_msg = f"Processing row index {idx}: {row.to_dict()}"
-            print(info_msg)
-            st.write(info_msg)
             image_path = row.get("image_path", "")
             if not image_path or not os.path.exists(image_path):
                 st.warning(f"No image file for row {row.get('id', idx)}")
