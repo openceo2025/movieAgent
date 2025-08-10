@@ -1,1 +1,1 @@
-id,category,tags,nsfw,ja_prompt,llm_model,image_prompt,image_path,post_url,post_site,post_id,wordpress_site,views_yesterday,views_week,views_month,checkpoint,comfy_vae,comfy_lora,temperature,max_tokens,top_p,cfg,steps,seed,batch_count,width,height
+id,category,tags,nsfw,ja_prompt,llm_model,image_prompt,image_path,post_url,post_site,post_id,wordpress_site,wordpress_account,views_yesterday,views_week,views_month,checkpoint,comfy_vae,comfy_lora,temperature,max_tokens,top_p,cfg,steps,seed,batch_count,width,height

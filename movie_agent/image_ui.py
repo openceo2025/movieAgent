@@ -141,8 +141,8 @@ def post_to_wordpress(row: pd.Series) -> Optional[Dict[str, Any]]:
                 encoded = base64.b64encode(f.read()).decode("utf-8")
             media.append({"filename": p.name, "data": encoded})
 
-    # Use the same site key for the posting account.
-    account = (row.get("wordpress_site") or WORDPRESS_ACCOUNT or "nicchi").strip()
+    # Determine posting account from row or environment variable.
+    account = (row.get("wordpress_account") or WORDPRESS_ACCOUNT or "nicchi").strip()
     payload = {
         "account": account,
         "title": title,
@@ -240,6 +240,11 @@ def main() -> None:
         df.insert(idx, "wordpress_site", "")
     else:
         df["wordpress_site"] = df["wordpress_site"].fillna("")
+    if "wordpress_account" not in df.columns:
+        idx = df.columns.get_loc("wordpress_site") + 1
+        df.insert(idx, "wordpress_account", WORDPRESS_ACCOUNT)
+    else:
+        df["wordpress_account"] = df["wordpress_account"].fillna(WORDPRESS_ACCOUNT)
     # "wordpress_site" values are keys, not full URLs.
     for col in ["checkpoint", "comfy_vae"]:
         if col not in df.columns:

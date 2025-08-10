@@ -40,6 +40,7 @@ def test_post_to_wordpress(monkeypatch, tmp_path):
             "tags": "cute,funny",
             "image_path": str(tmp_path),
             "wordpress_site": "mysite",
+            "wordpress_account": "myacct",
         }
     )
     result = post_to_wordpress(row)
@@ -63,6 +64,7 @@ def test_post_to_wordpress(monkeypatch, tmp_path):
     assert [m["filename"] for m in payload["media"]] == ["a.png", "b.png"]
     # Site should be forwarded in payload
     assert payload["site"] == "mysite"
+    assert payload["account"] == "myacct"
     # Returned values should be recorded
     assert row["post_url"] == "https://example.com/post/10"
     assert row["post_site"] == "mysite"
@@ -98,6 +100,7 @@ def test_post_to_wordpress_payload_has_site(monkeypatch, tmp_path):
             "tags": "cute",
             "image_path": str(tmp_path),
             "wordpress_site": "mysite",
+            "wordpress_account": "myacct",
         }
     )
 
@@ -137,6 +140,7 @@ def test_post_to_wordpress_records_site_and_id(monkeypatch, tmp_path):
                 "tags": "cute",
                 "image_path": str(tmp_path),
                 "wordpress_site": "mysite",
+                "wordpress_account": "myacct",
             }
         ]
     )
@@ -175,6 +179,7 @@ def test_post_to_wordpress_http_error(monkeypatch, tmp_path):
             "tags": "cute",
             "image_path": str(tmp_path),
             "wordpress_site": "mysite",
+            "wordpress_account": "myacct",
         }
     )
     assert post_to_wordpress(row) is None
@@ -208,6 +213,7 @@ def test_post_to_wordpress_bad_status(monkeypatch, tmp_path):
             "tags": "cute",
             "image_path": str(tmp_path),
             "wordpress_site": "mysite",
+            "wordpress_account": "myacct",
         }
     )
     assert post_to_wordpress(row) is None
@@ -241,6 +247,7 @@ def test_post_to_wordpress_no_url(monkeypatch, tmp_path):
             "tags": "cute",
             "image_path": str(tmp_path),
             "wordpress_site": "mysite",
+            "wordpress_account": "myacct",
         }
     )
     assert post_to_wordpress(row) is None
@@ -259,6 +266,11 @@ def test_post_to_wordpress_missing_site(monkeypatch, tmp_path):
         lambda *a, **k: pytest.fail("post should not be called when site missing"),
     )
 
-    row = pd.Series({"category": "cats", "tags": "cute", "image_path": str(tmp_path)})
+    row = pd.Series({
+        "category": "cats",
+        "tags": "cute",
+        "image_path": str(tmp_path),
+        "wordpress_account": "myacct",
+    })
     assert post_to_wordpress(row) is None
     assert errors and "WordPressサイトが指定されていません" in errors[0]
