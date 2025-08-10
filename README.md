@@ -151,6 +151,8 @@ Include the following columns in your sheet:
 - `image_prompt`
 - `image_path`
 - `post_url`
+- `post_site`
+- `post_id`
 - `wordpress_site`
 - `views_yesterday`
 - `views_week`
@@ -160,13 +162,15 @@ Include the following columns in your sheet:
 Place this column before `image_prompt`; the default model is `gpt-oss:20b`.
 Additional LLM or ComfyUI parameter columns (model, temperature, steps, seed, width, height, etc.) may also be added.
 
+`post_site` and `post_id` store the site slug and post identifier returned after posting. The Analysis button uses them to look up view counts.
+
 `wordpress_site` specifies which WordPress site to post to; you can supply a site slug or a full API URL. For example, `mysite`.
 
 ### Button actions
 - **Generate prompt** – use Ollama to convert `ja_prompt` into an English `image_prompt`.
 - **Generate images** – call ComfyUI to create images in a timestamped folder named `items/<category>_<tags>_<checkpoint>_<YYYYMMDD_HHMMSS>/`. The `image_path` column stores a `file://` URI to this folder, which Streamlit renders as a clickable link.
 - **Post** – send images to the configured WordPress API and store the resulting `post_url`.
-- **Analysis** – query the `autoPoster` API to fill `views_yesterday`, `views_week`, and `views_month`.
+- **Analysis** – use `post_site` and `post_id` to query the `autoPoster` API and fill `views_yesterday`, `views_week`, and `views_month`.
 
 ### Running
 On Windows you can launch the UI with the helper scripts:

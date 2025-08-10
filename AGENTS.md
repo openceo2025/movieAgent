@@ -95,13 +95,13 @@ streamlit run movie_agent/app.py
 `image_ui.py` は画像投稿用の Streamlit UI です。カテゴリ・タグ・NSFW フラグを管理し、日本語 `ja_prompt` を **Ollama** で英訳、**ComfyUI** で画像生成し、`autoPoster` API で自動投稿します。投稿後はビュー数を取得して記録できます。動画 UI と同じ Streamlit バージョンで動作するため、アップグレードは不要です。
 
 ### 必須列
-`category`, `tags`, `nsfw`, `ja_prompt`, `llm_model`, `image_prompt`, `image_path`, `post_url`, `views_yesterday`, `views_week`, `views_month` が最低限必要です。`llm_model` は英語プロンプト生成に使用する Ollama モデルを指定し、デフォルトは `gpt-oss:20b` です。シートでは `image_prompt` 列の前に配置してください。既存の LLM / ComfyUI パラメータ列も併用できます。
+`category`, `tags`, `nsfw`, `ja_prompt`, `llm_model`, `image_prompt`, `image_path`, `post_url`, `post_site`, `post_id`, `views_yesterday`, `views_week`, `views_month` が最低限必要です。`post_site` と `post_id` は投稿後に自動で記録され、`Analysis` ボタンで視聴数を取得する際に利用します。`llm_model` は英語プロンプト生成に使用する Ollama モデルを指定し、デフォルトは `gpt-oss:20b` です。シートでは `image_prompt` 列の前に配置してください。既存の LLM / ComfyUI パラメータ列も併用できます。
 
 ### ボタン
 - **Generate prompt** – `ja_prompt` を英語 `image_prompt` へ変換
 - **Generate images** – ComfyUI で画像生成。生成された画像は `items/<category>_<tags>_<checkpoint>_<YYYYMMDD_HHMMSS>/` というタイムスタンプ付きフォルダに保存され、`image_path` 列にはそのフォルダの絶対パス (`file://...`) がクリック可能なリンクとして記録されます。
 - **Post** – autoPoster へ投稿
-- **Analysis** – autoPoster から視聴数取得
+- **Analysis** – `post_site` と `post_id` を用いて autoPoster から視聴数取得
 
 ### 実行方法
 Windows では以下のバッチで起動できます。
