@@ -45,7 +45,6 @@ AUTOPOSTER_API_URL = os.getenv("AUTOPOSTER_API_URL", "http://127.0.0.1:9000")
 WORDPRESS_API_URL = os.getenv(
     "WORDPRESS_API_URL", "http://localhost:8765/wordpress/post"
 )
-WORDPRESS_ACCOUNT = os.getenv("WORDPRESS_ACCOUNT", "")
 DEFAULT_TIMEOUT = 300
 DEFAULT_BATCH = 1
 
@@ -142,8 +141,10 @@ def post_to_wordpress(row: pd.Series) -> Optional[Dict[str, Any]]:
                 encoded = base64.b64encode(f.read()).decode("utf-8")
             media.append({"filename": p.name, "data": encoded})
 
-    # Determine posting account from row or environment variable.
-    account = (row.get("wordpress_account") or WORDPRESS_ACCOUNT or "nicchi").strip()
+    account = row.get("wordpress_account")
+    if account is None or str(account).strip() == "":
+        st.error("WordPressアカウントが指定されていません")
+        return None
     payload = {
         "account": account,
         "title": title,
@@ -274,9 +275,9 @@ def main() -> None:
         df["wordpress_site"] = df["wordpress_site"].fillna("")
     if "wordpress_account" not in df.columns:
         idx = df.columns.get_loc("wordpress_site") + 1
-        df.insert(idx, "wordpress_account", WORDPRESS_ACCOUNT)
+        df.insert(idx, "wordpress_account", "")
     else:
-        df["wordpress_account"] = df["wordpress_account"].fillna(WORDPRESS_ACCOUNT)
+        df["wordpress_account"] = df["wordpress_account"].fillna("")
     # "wordpress_site" values are keys, not full URLs.
     for col in ["checkpoint", "comfy_vae"]:
         if col not in df.columns:

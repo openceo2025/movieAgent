@@ -274,3 +274,52 @@ def test_post_to_wordpress_missing_site(monkeypatch, tmp_path):
     })
     assert post_to_wordpress(row) is None
     assert errors and "WordPressサイトが指定されていません" in errors[0]
+
+
+def test_post_to_wordpress_missing_account(monkeypatch, tmp_path):
+    img = tmp_path / "a.png"
+    img.write_bytes(b"first")
+
+    errors = []
+    monkeypatch.setattr(st, "error", lambda msg: errors.append(msg))
+    monkeypatch.setattr(
+        requests,
+        "post",
+        lambda *a, **k: pytest.fail("post should not be called when account missing"),
+    )
+
+    row = pd.Series(
+        {
+            "category": "cats",
+            "tags": "cute",
+            "image_path": str(tmp_path),
+            "wordpress_site": "mysite",
+        }
+    )
+    assert post_to_wordpress(row) is None
+    assert errors and "WordPressアカウントが指定されていません" in errors[0]
+
+
+def test_post_to_wordpress_empty_account(monkeypatch, tmp_path):
+    img = tmp_path / "a.png"
+    img.write_bytes(b"first")
+
+    errors = []
+    monkeypatch.setattr(st, "error", lambda msg: errors.append(msg))
+    monkeypatch.setattr(
+        requests,
+        "post",
+        lambda *a, **k: pytest.fail("post should not be called when account empty"),
+    )
+
+    row = pd.Series(
+        {
+            "category": "cats",
+            "tags": "cute",
+            "image_path": str(tmp_path),
+            "wordpress_site": "mysite",
+            "wordpress_account": "",
+        }
+    )
+    assert post_to_wordpress(row) is None
+    assert errors and "WordPressアカウントが指定されていません" in errors[0]
