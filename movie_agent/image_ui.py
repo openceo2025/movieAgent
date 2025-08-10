@@ -483,14 +483,20 @@ def main() -> None:
                 )
                 continue
             try:
-                res = requests.get(
-                    f"{AUTOPOSTER_API_URL}/wordpress/stats/views",
-                    params={"site": site, "post_id": post_id, "days": 1},
-                    timeout=10,
-                )
-                res.raise_for_status()
-                data = res.json()
-                df.at[idx, "views_yesterday"] = data.get("views", [0])[0]
+                for days, column in [
+                    (1, "views_yesterday"),
+                    (7, "views_week"),
+                    (30, "views_month"),
+                ]:
+                    res = requests.get(
+                        f"{AUTOPOSTER_API_URL}/wordpress/stats/views",
+                        params={"site": site, "post_id": post_id, "days": days},
+                        timeout=10,
+                    )
+                    res.raise_for_status()
+                    data = res.json()
+                    views = data.get("views", [])
+                    df.at[idx, column] = views[0] if views else 0
             except Exception as e:
                 st.error(
                     f"Analysis failed for row {row.get('id', idx)}: {e}"
