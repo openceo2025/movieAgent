@@ -118,6 +118,9 @@ start_image_ui_conda.bat
 - `OLLAMA_HOST` = Ollama API (例: http://localhost:11434)
 - `COMFYUI_API_URL` = ComfyUI REST API (例: http://127.0.0.1:8188)
 - `AUTOPOSTER_API_URL` = autoPoster サービス (例: http://127.0.0.1:9000)
+- `WORDPRESS_API_URL` = WordPress REST API (例: http://127.0.0.1:8000/wp-json)
+- `WORDPRESS_ACCOUNT` = WordPress アカウント名 (例: admin)
+- `WORDPRESS_SITE` = WordPress サイト識別子 (例: myblog)
 
 ---
 ## 8. 今後の拡張アイデア
