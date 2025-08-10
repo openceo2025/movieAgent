@@ -81,8 +81,12 @@ def test_load_data_defaults_existing_file(tmp_path):
     assert loaded.loc[0, "controlnet_image"] == ""
 
 
-def test_load_image_data_adds_wordpress_site(tmp_path):
+def test_load_image_data_adds_post_columns(tmp_path):
     path = tmp_path / "img.csv"
     df = load_image_data(path)
+    assert "post_site" in df.columns
+    assert "post_id" in df.columns
+    assert df["post_site"].eq("").all()
+    assert df["post_id"].eq("").all()
     assert "wordpress_site" in df.columns
     assert df["wordpress_site"].eq("").all()
