@@ -464,7 +464,7 @@ def main() -> None:
                 if result:
                     df.at[idx, "post_url"] = result["link"]
                     df.at[idx, "post_site"] = result["site"]
-                    df.at[idx, "post_id"] = result["id"]
+                    df.at[idx, "post_id"] = str(result["id"])
                     st.success(f"Posted: {result['link']}")
                     print(f"[INFO] Posted: {result['link']}")
             except Exception as e:

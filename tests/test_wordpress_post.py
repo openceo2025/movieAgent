@@ -46,7 +46,7 @@ def test_post_to_wordpress(monkeypatch, tmp_path):
     result = post_to_wordpress(row)
     row["post_url"] = result["link"]
     row["post_site"] = result["site"]
-    row["post_id"] = result["id"]
+    row["post_id"] = str(result["id"])
 
     # Ensure function returns all required fields
     assert result == {
@@ -68,7 +68,7 @@ def test_post_to_wordpress(monkeypatch, tmp_path):
     # Returned values should be recorded
     assert row["post_url"] == "https://example.com/post/10"
     assert row["post_site"] == "mysite"
-    assert row["post_id"] == 10
+    assert row["post_id"] == "10"
 
 
 def test_post_to_wordpress_payload_has_site(monkeypatch, tmp_path):
@@ -149,10 +149,10 @@ def test_post_to_wordpress_records_site_and_id(monkeypatch, tmp_path):
     result = post_to_wordpress(row)
     df.at[0, "post_url"] = result["link"]
     df.at[0, "post_site"] = result["site"]
-    df.at[0, "post_id"] = result["id"]
+    df.at[0, "post_id"] = str(result["id"])
 
     assert "post_site" in df.columns and df.at[0, "post_site"] == "mysite"
-    assert "post_id" in df.columns and df.at[0, "post_id"] == 10
+    assert "post_id" in df.columns and df.at[0, "post_id"] == "10"
 
 
 def test_post_to_wordpress_http_error(monkeypatch, tmp_path):
