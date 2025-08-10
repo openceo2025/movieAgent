@@ -475,29 +475,26 @@ def main() -> None:
         df = st.session_state.image_df
         selected = df[df["selected"]]
         for idx, row in selected.iterrows():
-            url = row.get("post_url", "")
-            if not url:
-                st.warning(f"No post_url for row {row.get('id', idx)}")
+            site = row.get("post_site", "")
+            post_id = row.get("post_id", "")
+            if not site or not post_id:
+                st.warning(
+                    f"No post_site/post_id for row {row.get('id', idx)}"
+                )
                 continue
             try:
                 res = requests.get(
-                    f"{AUTOPOSTER_API_URL}/stats",
-                    params={"url": url},
+                    f"{AUTOPOSTER_API_URL}/wordpress/stats/views",
+                    params={"site": site, "post_id": post_id, "days": 1},
                     timeout=10,
                 )
                 res.raise_for_status()
                 data = res.json()
-                df.at[idx, "views_yesterday"] = data.get(
-                    "views_yesterday", row.get("views_yesterday", 0)
-                )
-                df.at[idx, "views_week"] = data.get(
-                    "views_week", row.get("views_week", 0)
-                )
-                df.at[idx, "views_month"] = data.get(
-                    "views_month", row.get("views_month", 0)
-                )
+                df.at[idx, "views_yesterday"] = data.get("views", [0])[0]
             except Exception as e:
-                st.error(f"Analysis failed for row {row.get('id', idx)}: {e}")
+                st.error(
+                    f"Analysis failed for row {row.get('id', idx)}: {e}"
+                )
         st.session_state.image_df = df
         if st.session_state.autosave:
             save_data(df, CSV_FILE)
