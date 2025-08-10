@@ -15,3 +15,16 @@ def test_build_image_prompt_context_includes_language_hint_and_ethnic_instructio
         "Ensure the prompt depicts people whose appearance reflects typical traits of regions where this language is primarily spoken."
         in result
     )
+
+
+def test_build_image_prompt_context_omits_language_hint_if_id_missing():
+    row = pd.Series(
+        {
+            "ja_prompt": "テストプロンプト",
+            "nsfw": False,
+            "category": "風景",
+            "tags": "自然",
+        }
+    )
+    result = build_image_prompt_context(row)
+    assert "Language hint:" not in result

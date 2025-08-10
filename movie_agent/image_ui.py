@@ -95,11 +95,11 @@ def build_image_prompt_context(row: pd.Series) -> str:
     """Build the context string for image prompt generation."""
     base = row.get("ja_prompt", "")
     nsfw = bool(row.get("nsfw"))
-    language = row.get("id")
+    language = str(row.get("id") or "").strip()
     synopsis = (
         "Create an English image-generation prompt.\n"
-        f"Category: {row.get('category')}\n"
-        f"Tags: {row.get('tags')}\n"
+        f"Category: {str(row.get('category') or '')}\n"
+        f"Tags: {str(row.get('tags') or '')}\n"
         f"Base prompt (Japanese): {base}\n"
         f"NSFW allowed: {nsfw}\n"
         "Return only the final English image-generation prompt.\n"
