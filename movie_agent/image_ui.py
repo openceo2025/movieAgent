@@ -4,6 +4,7 @@ from datetime import datetime
 from pathlib import Path
 
 import base64
+import json
 import random
 from typing import Optional, Dict, Any
 
@@ -154,6 +155,12 @@ def post_to_wordpress(row: pd.Series) -> Optional[Dict[str, Any]]:
 
     api_url = WORDPRESS_API_URL
     payload["site"] = site  # site key (not a full URL)
+
+    debug_payload = payload.copy()
+    debug_payload["media"] = [m["filename"] for m in media]
+    print(
+        f"[DEBUG] POST {api_url} payload: {json.dumps(debug_payload, ensure_ascii=False)}"
+    )
 
     try:
         resp = requests.post(api_url, json=payload, timeout=10)
