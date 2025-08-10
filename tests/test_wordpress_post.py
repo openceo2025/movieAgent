@@ -30,7 +30,7 @@ def test_post_to_wordpress(monkeypatch, tmp_path):
 
     def fake_post(url, *args, **kwargs):
         captured["payload"] = kwargs.get("json")
-        return FakeResponse({"link": "https://example.com/post/1", "site": "mysite", "id": 1})
+        return FakeResponse({"link": "https://example.com/post/10", "site": "mysite", "id": 10})
 
     monkeypatch.setattr(requests, "post", fake_post)
 
@@ -47,6 +47,13 @@ def test_post_to_wordpress(monkeypatch, tmp_path):
     row["post_site"] = result["site"]
     row["post_id"] = result["id"]
 
+    # Ensure function returns all required fields
+    assert result == {
+        "link": "https://example.com/post/10",
+        "site": "mysite",
+        "id": 10,
+    }
+
     payload = captured["payload"]
     # Title should incorporate category and first tag
     assert payload["title"] == "AI image cats cute"
@@ -57,9 +64,9 @@ def test_post_to_wordpress(monkeypatch, tmp_path):
     # Site should be forwarded in payload
     assert payload["site"] == "mysite"
     # Returned values should be recorded
-    assert row["post_url"] == "https://example.com/post/1"
+    assert row["post_url"] == "https://example.com/post/10"
     assert row["post_site"] == "mysite"
-    assert row["post_id"] == 1
+    assert row["post_id"] == 10
 
 
 def test_post_to_wordpress_payload_has_site(monkeypatch, tmp_path):
@@ -71,7 +78,7 @@ def test_post_to_wordpress_payload_has_site(monkeypatch, tmp_path):
     class FakeResponse:
         def __init__(self):
             self.status_code = 200
-            self.text = json.dumps({"link": "https://example.com/post/1", "site": "mysite", "id": 1})
+            self.text = json.dumps({"link": "https://example.com/post/10", "site": "mysite", "id": 10})
 
         def raise_for_status(self):
             pass
@@ -96,10 +103,52 @@ def test_post_to_wordpress_payload_has_site(monkeypatch, tmp_path):
 
     result = post_to_wordpress(row)
     assert result["site"] == "mysite"
+    assert result["id"] == 10
 
     payload = captured["payload"]
     assert "site" in payload
     assert payload["site"] == "mysite"
+
+
+def test_post_to_wordpress_records_site_and_id(monkeypatch, tmp_path):
+    img = tmp_path / "a.png"
+    img.write_bytes(b"first")
+
+    class FakeResponse:
+        def __init__(self):
+            self.status_code = 200
+            self.text = json.dumps({"link": "https://example.com/post/10", "site": "mysite", "id": 10})
+
+        def raise_for_status(self):
+            pass
+
+        def json(self):
+            return json.loads(self.text)
+
+    def fake_post(url, *args, **kwargs):
+        return FakeResponse()
+
+    monkeypatch.setattr(requests, "post", fake_post)
+
+    df = pd.DataFrame(
+        [
+            {
+                "category": "cats",
+                "tags": "cute",
+                "image_path": str(tmp_path),
+                "wordpress_site": "mysite",
+            }
+        ]
+    )
+
+    row = df.loc[0]
+    result = post_to_wordpress(row)
+    df.at[0, "post_url"] = result["link"]
+    df.at[0, "post_site"] = result["site"]
+    df.at[0, "post_id"] = result["id"]
+
+    assert "post_site" in df.columns and df.at[0, "post_site"] == "mysite"
+    assert "post_id" in df.columns and df.at[0, "post_id"] == 10
 
 
 def test_post_to_wordpress_http_error(monkeypatch, tmp_path):
