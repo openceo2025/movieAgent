@@ -46,8 +46,8 @@ def test_post_to_wordpress(monkeypatch, tmp_path):
     row["post_url"] = url
 
     payload = captured["payload"]
-    # Title should incorporate category
-    assert payload["title"] == "毎日投稿AI生成画像 cats"
+    # Title should incorporate category and first tag
+    assert payload["title"] == "AI image cats cute"
     # Tags should be joined as a comma-separated string
     assert payload["content"] == "cute, funny"
     # Media should list images in sorted order

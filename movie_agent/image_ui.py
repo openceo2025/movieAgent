@@ -94,8 +94,10 @@ def rerun_with_message(message: str) -> None:
 def post_to_wordpress(row: pd.Series) -> Optional[str]:
     """Post image metadata and files to a WordPress server."""
 
-    title = f"毎日投稿AI生成画像 {row['category']}"
     tags_list = [t.strip() for t in row.get("tags", "").split(",") if t.strip()]
+    first_tag = tags_list[0] if tags_list else ""
+    title_parts = ["AI image", row.get("category", ""), first_tag]
+    title = " ".join([p for p in title_parts if p])
     content = ", ".join(tags_list)
     image_dir = Path(row.get("image_path", ""))
     if not image_dir.exists():
