@@ -179,6 +179,31 @@ def post_to_wordpress(row: pd.Series) -> Optional[Dict[str, Any]]:
     return None
 
 
+def fetch_view_counts(site: str, post_id: str) -> Dict[str, int]:
+    """Fetch view counts for a WordPress post via autoPoster.
+
+    Returns a dict with ``views_yesterday``, ``views_week``, and
+    ``views_month`` keys.
+    """
+
+    results: Dict[str, int] = {}
+    for days, column in [
+        (1, "views_yesterday"),
+        (7, "views_week"),
+        (30, "views_month"),
+    ]:
+        res = requests.get(
+            f"{AUTOPOSTER_API_URL}/wordpress/stats/views",
+            params={"site": site, "post_id": post_id, "days": days},
+            timeout=10,
+        )
+        res.raise_for_status()
+        data = res.json()
+        views = data.get("views", [])
+        results[column] = views[0] if views else 0
+    return results
+
+
 def main() -> None:
     """Run the Streamlit UI for image generation and posting."""
     msg = st.session_state.pop("just_rerun", None)
@@ -488,20 +513,9 @@ def main() -> None:
                 )
                 continue
             try:
-                for days, column in [
-                    (1, "views_yesterday"),
-                    (7, "views_week"),
-                    (30, "views_month"),
-                ]:
-                    res = requests.get(
-                        f"{AUTOPOSTER_API_URL}/wordpress/stats/views",
-                        params={"site": site, "post_id": post_id, "days": days},
-                        timeout=10,
-                    )
-                    res.raise_for_status()
-                    data = res.json()
-                    views = data.get("views", [])
-                    df.at[idx, column] = views[0] if views else 0
+                counts = fetch_view_counts(site, post_id)
+                for column, value in counts.items():
+                    df.at[idx, column] = value
             except Exception as e:
                 st.error(
                     f"Analysis failed for row {row.get('id', idx)}: {e}"
