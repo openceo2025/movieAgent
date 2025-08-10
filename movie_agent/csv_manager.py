@@ -14,7 +14,6 @@ DEFAULT_WIDTH = 1024
 DEFAULT_HEIGHT = 1024
 DEFAULT_FPS = 24
 DEFAULT_VIDEO_LENGTH = 3
-WORDPRESS_ACCOUNT = os.getenv("WORDPRESS_ACCOUNT", "")
 
 
 def slugify(text: str) -> str:
@@ -207,7 +206,7 @@ def load_image_data(path: str) -> pd.DataFrame:
         df["post_site"] = ""
         df["post_id"] = ""
         df["wordpress_site"] = ""
-        df["wordpress_account"] = WORDPRESS_ACCOUNT
+        df["wordpress_account"] = ""
         df["views_yesterday"] = 0
         df["views_week"] = 0
         df["views_month"] = 0
@@ -231,7 +230,7 @@ def load_image_data(path: str) -> pd.DataFrame:
             elif c in ["views_yesterday", "views_week", "views_month"]:
                 df[c] = 0
             elif c == "wordpress_account":
-                df[c] = WORDPRESS_ACCOUNT
+                df[c] = ""
             else:
                 df[c] = ""
         if "llm_model" in missing_cols:
@@ -269,7 +268,7 @@ def load_image_data(path: str) -> pd.DataFrame:
         df["post_site"] = df["post_site"].fillna("").astype(str)
         df["post_id"] = df["post_id"].fillna("").astype(str)
         df["wordpress_site"] = df["wordpress_site"].fillna("").astype(str)
-        df["wordpress_account"] = df["wordpress_account"].fillna(WORDPRESS_ACCOUNT).astype(str)
+        df["wordpress_account"] = df["wordpress_account"].fillna("").astype(str)
         for vcol in ["views_yesterday", "views_week", "views_month"]:
             df[vcol] = (
                 pd.to_numeric(df[vcol], errors="coerce").fillna(0).astype(int)
