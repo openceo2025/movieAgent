@@ -91,6 +91,28 @@ def rerun_with_message(message: str) -> None:
     st.rerun()
 
 
+def build_image_prompt_context(row: pd.Series) -> str:
+    """Build the context string for image prompt generation."""
+    base = row.get("ja_prompt", "")
+    nsfw = bool(row.get("nsfw"))
+    language = row.get("id")
+    synopsis = (
+        "Create an English image-generation prompt.\n"
+        f"Category: {row.get('category')}\n"
+        f"Tags: {row.get('tags')}\n"
+        f"Base prompt (Japanese): {base}\n"
+        f"NSFW allowed: {nsfw}\n"
+        "Return only the final English image-generation prompt.\n"
+        "Do not include any explanations, notes, or reasoning text.\n"
+    )
+    if pd.notna(language) and language != "":
+        synopsis += (
+            f"Language hint: {language}\n"
+            "Ensure the prompt depicts people whose appearance reflects typical traits of regions where this language is primarily spoken."
+        )
+    return synopsis
+
+
 def post_to_wordpress(row: pd.Series) -> Optional[str]:
     """Post image metadata and files to a WordPress server."""
 
@@ -273,7 +295,6 @@ def main() -> None:
         for idx, row in selected.iterrows():
             base = row.get("ja_prompt", "")
             nsfw = bool(row.get("nsfw"))
-            language = row.get("id")
             if not row.get("image_prompt"):
                 if base:
                     try:
@@ -286,20 +307,7 @@ def main() -> None:
                             val = row.get(key)
                             if pd.notna(val) and val != "":
                                 kwargs[key] = val
-                        synopsis = (
-                            "Create an English image-generation prompt.\n"
-                            f"Category: {row.get('category')}\n"
-                            f"Tags: {row.get('tags')}\n"
-                            f"Base prompt (Japanese): {base}\n"
-                            f"NSFW allowed: {nsfw}\n"
-                            "Return only the final English image-generation prompt.\n"
-                            "Do not include any explanations, notes, or reasoning text.\n"
-                        )
-                        if pd.notna(language) and language != "":
-                            synopsis += (
-                                f"Language hint: {language}\n"
-                                "Ensure the prompt depicts people whose appearance reflects typical traits of regions where this language is primarily spoken."
-                            )
+                        synopsis = build_image_prompt_context(row)
                         prompt = generate_story_prompt(
                             synopsis,
                             model=model,
