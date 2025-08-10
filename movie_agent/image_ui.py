@@ -5,7 +5,7 @@ from pathlib import Path
 
 import base64
 import random
-from typing import Optional
+from typing import Optional, Dict, Any
 
 import requests
 import streamlit as st
@@ -113,8 +113,11 @@ def build_image_prompt_context(row: pd.Series) -> str:
     return synopsis
 
 
-def post_to_wordpress(row: pd.Series) -> Optional[str]:
-    """Post image metadata and files to a WordPress server."""
+def post_to_wordpress(row: pd.Series) -> Optional[Dict[str, Any]]:
+    """Post image metadata and files to a WordPress server.
+
+    Returns a dict with ``link``, ``site``, and ``id`` keys on success.
+    """
 
     tags_list = [t.strip() for t in row.get("tags", "").split(",") if t.strip()]
     first_tag = tags_list[0] if tags_list else ""
@@ -167,9 +170,11 @@ def post_to_wordpress(row: pd.Series) -> Optional[str]:
         )
         return None
     data = resp.json()
-    url = data.get("url")
-    if url:
-        return url
+    link = data.get("link")
+    site_resp = data.get("site")
+    post_id = data.get("id")
+    if link and site_resp is not None and post_id is not None:
+        return {"link": link, "site": site_resp, "id": post_id}
     st.warning("WordPressから投稿URLが返されませんでした")
     return None
 
@@ -211,8 +216,27 @@ def main() -> None:
     else:
         df["llm_model"] = df["llm_model"].fillna(DEFAULT_MODEL)
 
+    # Ensure posting-related columns exist
+    if "post_url" not in df.columns:
+        idx = df.columns.get_loc("image_path") + 1 if "image_path" in df.columns else len(df.columns)
+        df.insert(idx, "post_url", "")
+    else:
+        df["post_url"] = df["post_url"].fillna("")
+
+    if "post_site" not in df.columns:
+        idx = df.columns.get_loc("post_url") + 1
+        df.insert(idx, "post_site", "")
+    else:
+        df["post_site"] = df["post_site"].fillna("")
+
+    if "post_id" not in df.columns:
+        idx = df.columns.get_loc("post_site") + 1
+        df.insert(idx, "post_id", "")
+    else:
+        df["post_id"] = df["post_id"].fillna("")
+
     if "wordpress_site" not in df.columns:
-        idx = df.columns.get_loc("post_url") + 1 if "post_url" in df.columns else len(df.columns)
+        idx = df.columns.get_loc("post_id") + 1
         df.insert(idx, "wordpress_site", "")
     else:
         df["wordpress_site"] = df["wordpress_site"].fillna("")
@@ -256,6 +280,8 @@ def main() -> None:
             "image_prompt": st.column_config.TextColumn("Image Prompt"),
             "image_path": st.column_config.LinkColumn("Image Path"),
             "post_url": st.column_config.TextColumn("Post URL"),
+            "post_site": st.column_config.TextColumn("Post Site"),
+            "post_id": st.column_config.TextColumn("Post ID"),
             "views_yesterday": st.column_config.NumberColumn(
                 "Views Yesterday", min_value=0
             ),
@@ -429,11 +455,13 @@ def main() -> None:
                 st.warning(f"No image file for row {row.get('id', idx)}")
                 continue
             try:
-                url = post_to_wordpress(row)
-                if url:
-                    df.at[idx, "post_url"] = url
-                    st.success(f"Posted: {url}")
-                    print(f"[INFO] Posted: {url}")
+                result = post_to_wordpress(row)
+                if result:
+                    df.at[idx, "post_url"] = result["link"]
+                    df.at[idx, "post_site"] = result["site"]
+                    df.at[idx, "post_id"] = result["id"]
+                    st.success(f"Posted: {result['link']}")
+                    print(f"[INFO] Posted: {result['link']}")
             except Exception as e:
                 message = f"Posting failed for row {row.get('id', idx)}: {e}"
                 st.error(message)

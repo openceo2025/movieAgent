@@ -30,7 +30,7 @@ def test_post_to_wordpress(monkeypatch, tmp_path):
 
     def fake_post(url, *args, **kwargs):
         captured["payload"] = kwargs.get("json")
-        return FakeResponse({"url": "https://example.com/post/1"})
+        return FakeResponse({"link": "https://example.com/post/1", "site": "mysite", "id": 1})
 
     monkeypatch.setattr(requests, "post", fake_post)
 
@@ -42,8 +42,10 @@ def test_post_to_wordpress(monkeypatch, tmp_path):
             "wordpress_site": "mysite",
         }
     )
-    url = post_to_wordpress(row)
-    row["post_url"] = url
+    result = post_to_wordpress(row)
+    row["post_url"] = result["link"]
+    row["post_site"] = result["site"]
+    row["post_id"] = result["id"]
 
     payload = captured["payload"]
     # Title should incorporate category and first tag
@@ -54,8 +56,10 @@ def test_post_to_wordpress(monkeypatch, tmp_path):
     assert [m["filename"] for m in payload["media"]] == ["a.png", "b.png"]
     # Site should be forwarded in payload
     assert payload["site"] == "mysite"
-    # Returned URL should be recorded to post_url
+    # Returned values should be recorded
     assert row["post_url"] == "https://example.com/post/1"
+    assert row["post_site"] == "mysite"
+    assert row["post_id"] == 1
 
 
 def test_post_to_wordpress_payload_has_site(monkeypatch, tmp_path):
@@ -67,7 +71,7 @@ def test_post_to_wordpress_payload_has_site(monkeypatch, tmp_path):
     class FakeResponse:
         def __init__(self):
             self.status_code = 200
-            self.text = json.dumps({"url": "https://example.com/post/1"})
+            self.text = json.dumps({"link": "https://example.com/post/1", "site": "mysite", "id": 1})
 
         def raise_for_status(self):
             pass
@@ -90,7 +94,8 @@ def test_post_to_wordpress_payload_has_site(monkeypatch, tmp_path):
         }
     )
 
-    post_to_wordpress(row)
+    result = post_to_wordpress(row)
+    assert result["site"] == "mysite"
 
     payload = captured["payload"]
     assert "site" in payload
