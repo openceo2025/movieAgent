@@ -273,6 +273,7 @@ def main() -> None:
         for idx, row in selected.iterrows():
             base = row.get("ja_prompt", "")
             nsfw = bool(row.get("nsfw"))
+            language = row.get("id")
             if not row.get("image_prompt"):
                 if base:
                     try:
@@ -294,6 +295,11 @@ def main() -> None:
                             "Return only the final English image-generation prompt.\n"
                             "Do not include any explanations, notes, or reasoning text.\n"
                         )
+                        if pd.notna(language) and language != "":
+                            synopsis += (
+                                f"Language hint: {language}\n"
+                                "Ensure the prompt depicts people whose appearance reflects typical traits of regions where this language is primarily spoken."
+                            )
                         prompt = generate_story_prompt(
                             synopsis,
                             model=model,
