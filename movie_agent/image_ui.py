@@ -23,6 +23,7 @@ from movie_agent.ollama import (
     generate_story_prompt,
     DEBUG_MODE,
 )
+from movie_agent.lmstudio import generate_story_prompt_lmstudio, list_lmstudio_models
 from movie_agent.csv_manager import (
     load_image_data,
     save_data,
@@ -31,6 +32,7 @@ from movie_agent.csv_manager import (
     DEFAULT_WIDTH,
     DEFAULT_HEIGHT,
     DEFAULT_SEED,
+    DEFAULT_TEMPERATURE,
 )
 
 # Parse CLI arguments passed after `--` when launching via Streamlit
@@ -213,6 +215,47 @@ def fetch_view_counts(site: str, post_id: str) -> Dict[str, int]:
     return results
 
 
+def select_llm_models(df: pd.DataFrame) -> list[str]:
+    """Return available LLM models based on ``llm_environment`` column."""
+    if (
+        "llm_environment" in df.columns
+        and df["llm_environment"].astype(str).str.lower().eq("lmstudio").any()
+    ):
+        return list_lmstudio_models()
+    return list_ollama_models()
+
+
+def generate_prompt_for_row(
+    row: pd.Series,
+    context: str,
+    model: str,
+    temperature: float,
+    max_tokens: Optional[int],
+    top_p: Optional[float],
+    timeout: int,
+) -> Optional[str]:
+    """Generate a prompt using the appropriate LLM backend."""
+    env = str(row.get("llm_environment", "")).strip().lower()
+    if env == "lmstudio":
+        return generate_story_prompt_lmstudio(
+            context,
+            model,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            top_p=top_p,
+            timeout=timeout,
+        )
+    return generate_story_prompt(
+        context,
+        model=model,
+        temperature=temperature,
+        max_tokens=max_tokens,
+        top_p=top_p,
+        debug=DEBUG_MODE,
+        timeout=timeout,
+    )
+
+
 def main() -> None:
     """Run the Streamlit UI for image generation and posting."""
     msg = st.session_state.pop("just_rerun", None)
@@ -229,7 +272,7 @@ def main() -> None:
     if "autosave" not in st.session_state:
         st.session_state.autosave = False
     if "models" not in st.session_state:
-        st.session_state.models = list_ollama_models()
+        st.session_state.models = select_llm_models(st.session_state.image_df)
     if "comfy_models" not in st.session_state:
         (
             st.session_state.comfy_models,
@@ -383,13 +426,16 @@ def main() -> None:
                             if pd.notna(val) and val != "":
                                 kwargs[key] = val
                         synopsis = build_image_prompt_context(row)
-                        prompt = generate_story_prompt(
+                        prompt = generate_prompt_for_row(
+                            row,
                             synopsis,
-                            model=model,
-                            timeout=int(
+                            model,
+                            kwargs.get("temperature", DEFAULT_TEMPERATURE),
+                            kwargs.get("max_tokens"),
+                            kwargs.get("top_p"),
+                            int(
                                 row.get("timeout", DEFAULT_TIMEOUT) or DEFAULT_TIMEOUT
                             ),
-                            **kwargs,
                         )
                         if prompt:
                             if nsfw:
