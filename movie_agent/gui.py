@@ -14,6 +14,7 @@ from .comfyui import (
 )
 from . import framepack
 from .ollama import list_ollama_models, generate_story_prompt, DEBUG_MODE
+from .lmstudio import list_lmstudio_models, generate_story_prompt_lmstudio
 from .csv_manager import (
     load_data,
     save_data,
@@ -75,6 +76,47 @@ def rerun_with_message(message: str) -> None:
     st.rerun()
 
 
+def select_llm_models(df: pd.DataFrame) -> list[str]:
+    """Return available LLM models based on the ``llm_environment`` column."""
+    if (
+        "llm_environment" in df.columns
+        and df["llm_environment"].astype(str).str.lower().eq("lmstudio").any()
+    ):
+        return list_lmstudio_models()
+    return list_ollama_models()
+
+
+def generate_prompt_for_row(
+    row: pd.Series,
+    synopsis: str,
+    model: str,
+    temperature: float,
+    max_tokens: int,
+    top_p: float,
+    timeout: int,
+) -> str | None:
+    """Generate a story prompt using the appropriate backend."""
+    env = str(row.get("llm_environment", "")).strip().lower()
+    if env == "lmstudio":
+        return generate_story_prompt_lmstudio(
+            synopsis,
+            model,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            top_p=top_p,
+            timeout=timeout,
+        )
+    return generate_story_prompt(
+        synopsis,
+        model,
+        temperature,
+        max_tokens,
+        top_p,
+        debug=DEBUG_MODE,
+        timeout=timeout,
+    )
+
+
 def main() -> None:
     """Run the Streamlit GUI."""
     # Display notice if the page was refreshed by st.rerun()
@@ -92,7 +134,7 @@ def main() -> None:
     if "autosave" not in st.session_state:
         st.session_state.autosave = False
     if "models" not in st.session_state:
-        st.session_state.models = list_ollama_models()
+        st.session_state.models = select_llm_models(st.session_state.video_df)
     if "comfy_models" not in st.session_state:
         (
             st.session_state.comfy_models,
@@ -274,16 +316,18 @@ def main() -> None:
             if pd.isna(timeout) or timeout == "":
                 timeout = DEFAULT_OLLAMA_TIMEOUT
             timeout = int(timeout)
+            nsfw_flag = row.get("nsfw", "")
+            if pd.notna(nsfw_flag) and str(nsfw_flag).strip().upper() == "Y":
+                synopsis += " --NSFW"
             if synopsis:
-                # generate_story_prompt now returns the full response in one go
-                prompt = generate_story_prompt(
+                prompt = generate_prompt_for_row(
+                    row,
                     synopsis,
                     model,
                     temperature,
                     max_tokens,
                     top_p,
-                    debug=DEBUG_MODE,
-                    timeout=timeout,
+                    timeout,
                 )
                 if prompt is not None:
                     df.at[idx, "story_prompt"] = prompt
