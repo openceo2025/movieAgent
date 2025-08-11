@@ -191,6 +191,7 @@ streamlit run movie_agent/image_ui.py
 Set endpoints so the UI can reach local services:
 
 - `OLLAMA_HOST` – base URL of the Ollama API (e.g. `http://localhost:11434`).
+- `LMSTUDIO_HOST` – base URL of the LM Studio API (e.g. `http://localhost:1234`).
 - `COMFYUI_API_URL` – endpoint for the ComfyUI REST API (e.g. `http://127.0.0.1:8188`).
 - `AUTOPOSTER_API_URL` – URL of the local autoPoster service for analytics (e.g. `http://127.0.0.1:9000`).
 - `WORDPRESS_API_URL` – endpoint for posting to WordPress (e.g. `http://localhost:8765/wordpress/post`).
