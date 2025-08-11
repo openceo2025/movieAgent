@@ -17,7 +17,10 @@ DEFAULT_CFG = 7
 DEFAULT_STEPS = 28
 DEFAULT_WIDTH = 1024
 DEFAULT_HEIGHT = 1024
-DEFAULT_NEGATIVE_PROMPT = "blurry, watermark, lowres, jpeg artifacts"
+DEFAULT_NEGATIVE_PROMPT = (
+    "blurry, watermark, lowres, jpeg artifacts, nsfw, nipples, "
+    "pubic hair, nude, exposed chest"
+)
 
 # Utility coercion helpers
 
@@ -97,6 +100,9 @@ BASE_WORKFLOW = {
         "inputs": {"filename_prefix": "ComfyUI", "images": ["8", 0]},
     },
 }
+
+# Ensure the base workflow always uses the current negative prompt
+BASE_WORKFLOW["7"]["inputs"]["text"] = DEFAULT_NEGATIVE_PROMPT
 
 
 def list_comfy_models() -> tuple[list[str], list[str], list[str]]:
