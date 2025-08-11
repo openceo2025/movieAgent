@@ -167,6 +167,7 @@ def load_image_data(path: str) -> pd.DataFrame:
         "llm_model",
         "image_prompt",
         "negative_prompt",
+        "sfw_negative_prompt",
         "image_path",
         "post_url",
         "post_site",
@@ -203,6 +204,7 @@ def load_image_data(path: str) -> pd.DataFrame:
         df["llm_model"] = DEFAULT_MODEL
         df["image_prompt"] = ""
         df["negative_prompt"] = ""
+        df["sfw_negative_prompt"] = ""
         df["image_path"] = ""
         df["post_url"] = ""
         df["post_site"] = ""
@@ -266,6 +268,7 @@ def load_image_data(path: str) -> pd.DataFrame:
         df["llm_model"] = df["llm_model"].fillna(DEFAULT_MODEL).astype(str)
         df["image_prompt"] = df["image_prompt"].fillna("").astype(str)
         df["negative_prompt"] = df["negative_prompt"].fillna("").astype(str)
+        df["sfw_negative_prompt"] = df["sfw_negative_prompt"].fillna("").astype(str)
         df["image_path"] = df["image_path"].fillna("").astype(str)
         df["post_url"] = df["post_url"].fillna("").astype(str)
         df["post_site"] = df["post_site"].fillna("").astype(str)

@@ -318,6 +318,7 @@ def main() -> None:
             ),
             "image_prompt": st.column_config.TextColumn("Image Prompt"),
             "negative_prompt": st.column_config.TextColumn("Negative Prompt"),
+            "sfw_negative_prompt": st.column_config.TextColumn("SFW Negative Prompt"),
             "image_path": st.column_config.LinkColumn("Image Path"),
             "post_url": st.column_config.TextColumn("Post URL"),
             "post_site": st.column_config.TextColumn("Post Site"),
@@ -412,6 +413,11 @@ def main() -> None:
                 st.warning(f"No image_prompt for row {row.get('id', idx)}")
                 continue
             neg_prompt = row.get("negative_prompt", "") or DEFAULT_NEGATIVE_PROMPT
+            sfw_neg = row.get("sfw_negative_prompt", "")
+            if row.get("nsfw"):
+                final_neg = neg_prompt
+            else:
+                final_neg = ", ".join(filter(None, [neg_prompt, sfw_neg]))
             checkpoint = row.get("checkpoint") or ""
             if not checkpoint:
                 if st.session_state.comfy_models:
@@ -459,7 +465,7 @@ def main() -> None:
                         checkpoint=checkpoint,
                         vae=vae,
                         seed=seed + b,
-                        negative_prompt=neg_prompt,
+                        negative_prompt=final_neg,
                         width=width_val,
                         height=height_val,
                         cfg=cfg_val,
