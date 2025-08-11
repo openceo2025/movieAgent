@@ -90,3 +90,5 @@ def test_load_image_data_adds_post_columns(tmp_path):
     assert df["post_id"].eq("").all()
     assert "wordpress_site" in df.columns
     assert df["wordpress_site"].eq("").all()
+    assert "negative_prompt" in df.columns
+    assert df["negative_prompt"].eq("").all()

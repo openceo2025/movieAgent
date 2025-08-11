@@ -139,6 +139,7 @@ def generate_image(
     checkpoint: str,
     vae: str,
     seed: int,
+    negative_prompt: str = DEFAULT_NEGATIVE_PROMPT,
     width: int = DEFAULT_WIDTH,
     height: int = DEFAULT_HEIGHT,
     cfg: float = DEFAULT_CFG,
@@ -150,6 +151,7 @@ def generate_image(
 ) -> List[Path]:
     """Generate image(s) via ComfyUI and save to ``output_dir``.
 
+    ``negative_prompt`` overrides the default when provided.
     Returns a list of file paths for the saved images. If generation fails,
     an empty list is returned.
     """
@@ -164,6 +166,7 @@ def generate_image(
 
     workflow = json.loads(json.dumps(BASE_WORKFLOW))
     workflow["6"]["inputs"]["text"] = prompt
+    workflow["7"]["inputs"]["text"] = negative_prompt or DEFAULT_NEGATIVE_PROMPT
     workflow["4"]["inputs"]["ckpt_name"] = checkpoint
     if vae:
         workflow["4"]["inputs"]["vae_name"] = vae
