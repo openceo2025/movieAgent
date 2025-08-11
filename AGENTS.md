@@ -31,6 +31,7 @@
 | `bgm_prompt` | BGM 生成 or 取得条件 | `lofi science` |
 | `taste_prompt` | 絵柄・雰囲気 | `flat comic, high-contrast` |
 | `character_voice` | キャラ音声設定 | `female, cheerful, JP` |
+| `llm_environment` | 使用する LLM 実行環境 (`Ollama` または `LMStudio`) | `Ollama` |
 | `status` | 進捗ステータス | `sheet`, `panel`, `video`, `ready`, `posted` |
 | `needs_approve` | 人的承認要否 (`Y/N`) | `Y` |
 
@@ -95,7 +96,7 @@ streamlit run movie_agent/app.py
 `image_ui.py` は画像投稿用の Streamlit UI です。カテゴリ・タグ・NSFW フラグを管理し、日本語 `ja_prompt` を **Ollama** で英訳、**ComfyUI** で画像生成し、`autoPoster` API で自動投稿します。投稿後はビュー数を取得して記録できます。動画 UI と同じ Streamlit バージョンで動作するため、アップグレードは不要です。
 
 ### 必須列
-`category`, `tags`, `nsfw`, `ja_prompt`, `llm_model`, `image_prompt`, `image_path`, `post_url`, `post_site`, `post_id`, `views_yesterday`, `views_week`, `views_month` が最低限必要です。`post_site` と `post_id` は投稿後に自動で記録され、`Analysis` ボタンで視聴数を取得する際に利用します。`llm_model` は英語プロンプト生成に使用する Ollama モデルを指定し、デフォルトは `gpt-oss:20b` です。シートでは `image_prompt` 列の前に配置してください。既存の LLM / ComfyUI パラメータ列も併用できます。
+`category`, `tags`, `nsfw`, `ja_prompt`, `llm_environment`, `llm_model`, `image_prompt`, `image_path`, `post_url`, `post_site`, `post_id`, `views_yesterday`, `views_week`, `views_month` が最低限必要です。`post_site` と `post_id` は投稿後に自動で記録され、`Analysis` ボタンで視聴数を取得する際に利用します。`llm_environment` はリクエストを送る先 (`Ollama` または `LMStudio`) を選択します（デフォルトは `Ollama`）。`llm_model` は選択した環境で使用するモデルを指定し、デフォルトは `gpt-oss:20b` です。シートでは `image_prompt` 列の前に配置してください。既存の LLM / ComfyUI パラメータ列も併用できます。リクエスト先以外の挙動は従来の Ollama と同じです。
 
 ### ボタン
 - **Generate prompt** – `ja_prompt` を英語 `image_prompt` へ変換
@@ -116,12 +117,14 @@ start_image_ui_conda.bat
 
 ### 環境変数の例
 - `OLLAMA_HOST` = Ollama API (例: http://localhost:11434)
-- `LMSTUDIO_HOST` = LM Studio API (例: http://localhost:1234)
+- `LMSTUDIO_HOST` = LM Studio API ベース URL (例: http://localhost:1234)。OpenAI 互換エンドポイント (`/v1/chat/completions`, `/v1/completions`) を提供。
 - `COMFYUI_API_URL` = ComfyUI REST API (例: http://127.0.0.1:8188)
 - `AUTOPOSTER_API_URL` = autoPoster サービス (例: http://127.0.0.1:9000)
 - `WORDPRESS_API_URL` = WordPress REST API (例: http://127.0.0.1:8000/wp-json)
 - `WORDPRESS_ACCOUNT` = WordPress アカウント名 (例: admin)
 - `WORDPRESS_SITE` = WordPress サイト識別子 (例: myblog)
+
+`llm_environment` を `LMStudio` にすると、Ollama と同じ挙動で `LMSTUDIO_HOST` のエンドポイントにリクエストが送信されます。
 
 ---
 ## 8. 今後の拡張アイデア
