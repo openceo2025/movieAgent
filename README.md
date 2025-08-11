@@ -147,6 +147,7 @@ Include the following columns in your sheet:
 - `tags`
 - `nsfw`
 - `ja_prompt`
+- `llm_environment`
 - `llm_model`
 - `image_prompt`
 - `image_path`
@@ -158,7 +159,9 @@ Include the following columns in your sheet:
 - `views_week`
 - `views_month`
 
-`llm_model` selects the Ollama model used when translating `ja_prompt` into English.
+`llm_environment` chooses whether prompts are sent to **Ollama** or **LM Studio** (default: `Ollama`). The feature mirrors the existing Ollama integration; only the request destination changes.
+
+`llm_model` selects the model on the chosen service used when translating `ja_prompt` into English.
 Place this column before `image_prompt`; the default model is `gpt-oss:20b`.
 Additional LLM or ComfyUI parameter columns (model, temperature, steps, seed, width, height, etc.) may also be added.
 
@@ -191,9 +194,11 @@ streamlit run movie_agent/image_ui.py
 Set endpoints so the UI can reach local services:
 
 - `OLLAMA_HOST` – base URL of the Ollama API (e.g. `http://localhost:11434`).
-- `LMSTUDIO_HOST` – base URL of the LM Studio API (e.g. `http://localhost:1234`).
+- `LMSTUDIO_HOST` – base URL of the LM Studio API (e.g. `http://localhost:1234`). It serves OpenAI-style endpoints such as `/v1/chat/completions` and `/v1/completions`.
 - `COMFYUI_API_URL` – endpoint for the ComfyUI REST API (e.g. `http://127.0.0.1:8188`).
 - `AUTOPOSTER_API_URL` – URL of the local autoPoster service for analytics (e.g. `http://127.0.0.1:9000`).
 - `WORDPRESS_API_URL` – endpoint for posting to WordPress (e.g. `http://localhost:8765/wordpress/post`).
 - `WORDPRESS_ACCOUNT` – WordPress account name used when posting.
+
+When `llm_environment` is `LMStudio`, requests target `LMSTUDIO_HOST` instead of the Ollama API; all other behavior remains the same.
 
