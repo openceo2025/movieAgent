@@ -116,6 +116,7 @@ start_image_ui_conda.bat
 
 ### 環境変数の例
 - `OLLAMA_HOST` = Ollama API (例: http://localhost:11434)
+- `LMSTUDIO_HOST` = LM Studio API (例: http://localhost:1234)
 - `COMFYUI_API_URL` = ComfyUI REST API (例: http://127.0.0.1:8188)
 - `AUTOPOSTER_API_URL` = autoPoster サービス (例: http://127.0.0.1:9000)
 - `WORDPRESS_API_URL` = WordPress REST API (例: http://127.0.0.1:8000/wp-json)
