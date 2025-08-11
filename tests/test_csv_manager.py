@@ -94,3 +94,5 @@ def test_load_image_data_adds_post_columns(tmp_path):
     assert df["negative_prompt"].eq("").all()
     assert "sfw_negative_prompt" in df.columns
     assert df["sfw_negative_prompt"].eq("").all()
+    assert "llm_environment" in df.columns
+    assert df["llm_environment"].eq("Ollama").all()
