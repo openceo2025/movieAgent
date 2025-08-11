@@ -165,6 +165,7 @@ def load_image_data(path: str) -> pd.DataFrame:
         "nsfw",
         "ja_prompt",
         "llm_model",
+        "llm_environment",
         "image_prompt",
         "negative_prompt",
         "sfw_negative_prompt",
@@ -202,6 +203,7 @@ def load_image_data(path: str) -> pd.DataFrame:
         df["nsfw"] = False
         df["ja_prompt"] = ""
         df["llm_model"] = DEFAULT_MODEL
+        df["llm_environment"] = "Ollama"
         df["image_prompt"] = ""
         df["negative_prompt"] = ""
         df["sfw_negative_prompt"] = ""
@@ -239,6 +241,8 @@ def load_image_data(path: str) -> pd.DataFrame:
                 df[c] = ""
         if "llm_model" in missing_cols:
             df["llm_model"] = DEFAULT_MODEL
+        if "llm_environment" in missing_cols:
+            df["llm_environment"] = "Ollama"
         if "temperature" in missing_cols:
             df["temperature"] = DEFAULT_TEMPERATURE
         if "max_tokens" in missing_cols:
@@ -266,6 +270,7 @@ def load_image_data(path: str) -> pd.DataFrame:
         df["tags"] = df["tags"].fillna("").astype(str)
         df["ja_prompt"] = df["ja_prompt"].fillna("").astype(str)
         df["llm_model"] = df["llm_model"].fillna(DEFAULT_MODEL).astype(str)
+        df["llm_environment"] = df["llm_environment"].fillna("Ollama").astype(str)
         df["image_prompt"] = df["image_prompt"].fillna("").astype(str)
         df["negative_prompt"] = df["negative_prompt"].fillna("").astype(str)
         df["sfw_negative_prompt"] = df["sfw_negative_prompt"].fillna("").astype(str)

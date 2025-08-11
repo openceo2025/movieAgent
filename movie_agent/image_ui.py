@@ -249,6 +249,11 @@ def main() -> None:
         df.insert(idx, "llm_model", DEFAULT_MODEL)
     else:
         df["llm_model"] = df["llm_model"].fillna(DEFAULT_MODEL)
+    if "llm_environment" not in df.columns:
+        idx = df.columns.get_loc("image_prompt") if "image_prompt" in df.columns else len(df.columns)
+        df.insert(idx, "llm_environment", "Ollama")
+    else:
+        df["llm_environment"] = df["llm_environment"].fillna("Ollama")
 
     # Ensure posting-related columns exist
     if "post_url" not in df.columns:
@@ -315,6 +320,9 @@ def main() -> None:
             "ja_prompt": st.column_config.TextColumn("Japanese Prompt"),
             "llm_model": st.column_config.SelectboxColumn(
                 "LLM Model", options=st.session_state.models
+            ),
+            "llm_environment": st.column_config.SelectboxColumn(
+                "LLM Environment", options=["Ollama", "LMStudio"]
             ),
             "image_prompt": st.column_config.TextColumn("Image Prompt"),
             "negative_prompt": st.column_config.TextColumn("Negative Prompt"),
