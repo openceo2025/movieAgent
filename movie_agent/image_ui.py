@@ -16,6 +16,7 @@ from movie_agent.comfyui import (
     generate_image,
     DEFAULT_CFG,
     DEFAULT_STEPS,
+    DEFAULT_NEGATIVE_PROMPT,
 )
 from movie_agent.ollama import (
     list_ollama_models,
@@ -316,6 +317,7 @@ def main() -> None:
                 "LLM Model", options=st.session_state.models
             ),
             "image_prompt": st.column_config.TextColumn("Image Prompt"),
+            "negative_prompt": st.column_config.TextColumn("Negative Prompt"),
             "image_path": st.column_config.LinkColumn("Image Path"),
             "post_url": st.column_config.TextColumn("Post URL"),
             "post_site": st.column_config.TextColumn("Post Site"),
@@ -409,6 +411,7 @@ def main() -> None:
             if not prompt:
                 st.warning(f"No image_prompt for row {row.get('id', idx)}")
                 continue
+            neg_prompt = row.get("negative_prompt", "") or DEFAULT_NEGATIVE_PROMPT
             checkpoint = row.get("checkpoint") or ""
             if not checkpoint:
                 if st.session_state.comfy_models:
@@ -456,6 +459,7 @@ def main() -> None:
                         checkpoint=checkpoint,
                         vae=vae,
                         seed=seed + b,
+                        negative_prompt=neg_prompt,
                         width=width_val,
                         height=height_val,
                         cfg=cfg_val,
