@@ -4,6 +4,7 @@ import streamlit as st
 import pandas as pd
 import os
 import random
+import logging
 from pathlib import Path
 from streamlit.components.v1 import html as component_html
 from movie_agent.utils import rerun_with_message
@@ -27,6 +28,7 @@ from .csv_manager import (
     DEFAULT_VIDEO_LENGTH,
 )
 from .row_utils import iterate_selected
+from movie_agent.logger import logger
 
 # Parse CLI arguments passed after `--` when launching via Streamlit
 parser = argparse.ArgumentParser(add_help=False)
@@ -37,7 +39,8 @@ parser.add_argument(
 )
 args, _ = parser.parse_known_args()
 if args.debug:
-    print("[DEBUG] Debug mode enabled")
+    logger.setLevel(logging.DEBUG)
+    logger.debug("Debug mode enabled")
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 CSV_FILE = str(BASE_DIR / "videos.csv")
@@ -380,6 +383,7 @@ def main() -> None:
                         "Failed to generate image for row "
                         f"{row.get('id', idx)} (batch {b+1})"
                     )
+                    logger.error(message)
                     st.error(message)
 
         iterate_selected(df, process)
@@ -390,8 +394,8 @@ def main() -> None:
 
     if st.button("Generate videos", disabled=generate_disabled):
         if DEBUG_MODE:
-            print("[DEBUG] Generate videos button clicked")
-            print(f"[DEBUG] {int(selected_rows.sum())} rows selected")
+            logger.debug("Generate videos button clicked")
+            logger.debug("%d rows selected", int(selected_rows.sum()))
         df = st.session_state.video_df.copy()
         found_any_panels = False
 
@@ -405,23 +409,29 @@ def main() -> None:
             )
             panels_dir = os.path.join(base_folder, "panels")
             if DEBUG_MODE:
-                print(
-                    f"[DEBUG] Processing row {row.get('id', idx)}; panels_dir: {panels_dir}"
+                logger.debug(
+                    "Processing row %s; panels_dir: %s",
+                    row.get('id', idx),
+                    panels_dir,
                 )
 
             images = sorted(Path(panels_dir).glob("*.png"))
             if not images:
                 if DEBUG_MODE:
-                    print(
-                        f"[DEBUG] No panels found for row {row.get('id', idx)} in {panels_dir}"
+                    logger.debug(
+                        "No panels found for row %s in %s",
+                        row.get('id', idx),
+                        panels_dir,
                     )
                 st.warning(f"No panels found for row {row.get('id', idx)}")
                 return
             found_any_panels = True
             start_image = str(images[0])
             if DEBUG_MODE:
-                print(
-                    f"[DEBUG] Found {len(images)} images, start image: {start_image}"
+                logger.debug(
+                    "Found %d images, start image: %s",
+                    len(images),
+                    start_image,
                 )
 
             fps_val = row.get("fps", DEFAULT_FPS)
@@ -473,7 +483,7 @@ def main() -> None:
             }
             log_to_console(request_data)
             if DEBUG_MODE:
-                print("[DEBUG] request_data:", request_data)
+                logger.debug("request_data: %s", request_data)
 
             result = framepack.generate_video(
                 start_image,
@@ -492,15 +502,17 @@ def main() -> None:
             )
             if DEBUG_MODE:
                 if result:
-                    print(f"[DEBUG] framepack.generate_video returned: {result}")
+                    logger.debug(
+                        "framepack.generate_video returned: %s", result
+                    )
                 else:
-                    print("[DEBUG] framepack.generate_video returned None")
+                    logger.debug("framepack.generate_video returned None")
             if result:
                 st.success(f"Video saved to {out_path}")
             else:
-                st.error(
-                    f"Failed to generate video for row {row.get('id', idx)}"
-                )
+                message = f"Failed to generate video for row {row.get('id', idx)}"
+                logger.error(message)
+                st.error(message)
 
         iterate_selected(df, process)
         st.session_state.video_df = df
