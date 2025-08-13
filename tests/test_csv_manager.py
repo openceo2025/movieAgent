@@ -7,6 +7,8 @@ from movie_agent.csv_manager import (
     save_data,
     unique_path,
     slugify,
+)
+from movie_agent.csv_schema import (
     DEFAULT_MODEL,
     DEFAULT_MAX_TOKENS,
     DEFAULT_TEMPERATURE,
@@ -14,6 +16,8 @@ from movie_agent.csv_manager import (
     DEFAULT_STEPS,
     DEFAULT_FPS,
     DEFAULT_VIDEO_LENGTH,
+    VIDEO_COLUMNS,
+    IMAGE_DEFAULTS,
 )
 
 
@@ -21,13 +25,7 @@ def test_load_data_missing(tmp_path):
     path = tmp_path / "missing.csv"
     df = load_data(path)
     assert df.empty
-    assert "title" in df.columns
-    # newly added columns should exist with defaults
-    assert "movie_prompt" in df.columns
-    assert "video_length" in df.columns
-    assert "fps" in df.columns
-    assert "batch_count" in df.columns
-    assert "controlnet_image" in df.columns
+    assert list(df.columns) == VIDEO_COLUMNS
 
 
 def test_save_data(tmp_path):
@@ -95,7 +93,7 @@ def test_load_image_data_adds_post_columns(tmp_path):
     assert "sfw_negative_prompt" in df.columns
     assert df["sfw_negative_prompt"].eq("").all()
     assert "llm_environment" in df.columns
-    assert df["llm_environment"].eq("Ollama").all()
+    assert df["llm_environment"].eq(IMAGE_DEFAULTS["llm_environment"]).all()
 
 
 def test_load_image_data_sample():

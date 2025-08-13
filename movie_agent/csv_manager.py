@@ -2,18 +2,23 @@ import os
 import re
 import pandas as pd
 
-from .comfyui import DEFAULT_CFG, DEFAULT_STEPS
-
-# Default generation parameters used when initializing a new CSV
-DEFAULT_MODEL = "gpt-oss:20b"
-DEFAULT_TEMPERATURE = 0.8
-DEFAULT_MAX_TOKENS = 4096
-DEFAULT_TOP_P = 0.95
-DEFAULT_SEED = 31337
-DEFAULT_WIDTH = 1024
-DEFAULT_HEIGHT = 1024
-DEFAULT_FPS = 24
-DEFAULT_VIDEO_LENGTH = 3
+from .csv_schema import (
+    DEFAULT_CFG,
+    DEFAULT_STEPS,
+    DEFAULT_MODEL,
+    DEFAULT_TEMPERATURE,
+    DEFAULT_MAX_TOKENS,
+    DEFAULT_TOP_P,
+    DEFAULT_SEED,
+    DEFAULT_WIDTH,
+    DEFAULT_HEIGHT,
+    DEFAULT_FPS,
+    DEFAULT_VIDEO_LENGTH,
+    VIDEO_COLUMNS,
+    VIDEO_DEFAULTS,
+    IMAGE_COLUMNS,
+    IMAGE_DEFAULTS,
+)
 
 
 def slugify(text: str) -> str:
@@ -40,101 +45,17 @@ def load_data(path: str) -> pd.DataFrame:
     If the file does not exist an empty DataFrame with default columns is
     returned.
     """
-    columns = [
-        "selected",
-        "id",
-        "title",
-        "synopsis",
-        "llm_model",
-        "checkpoint",
-        "comfy_vae",
-        "comfy_lora",
-        "temperature",
-        "max_tokens",
-        "top_p",
-        "cfg",
-        "steps",
-        "seed",
-        "batch_count",
-        "width",
-        "height",
-        "story_prompt",
-        "bgm_prompt",
-        "taste_prompt",
-        "character_voice",
-        "movie_prompt",
-        "video_length",
-        "fps",
-        "status",
-        "needs_approve",
-        "controlnet_image",
-    ]
+    columns = VIDEO_COLUMNS
     try:
         df = pd.read_csv(path)
     except FileNotFoundError:
         df = pd.DataFrame(columns=columns)
-        df["selected"] = False
-        df["id"] = ""
-        df["llm_model"] = DEFAULT_MODEL
-        df["checkpoint"] = ""
-        df["comfy_vae"] = ""
-        df["comfy_lora"] = ""
-        df["temperature"] = DEFAULT_TEMPERATURE
-        df["max_tokens"] = DEFAULT_MAX_TOKENS
-        df["top_p"] = DEFAULT_TOP_P
-        df["cfg"] = DEFAULT_CFG
-        df["steps"] = DEFAULT_STEPS
-        df["seed"] = DEFAULT_SEED
-        df["batch_count"] = 1
-        df["width"] = DEFAULT_WIDTH
-        df["height"] = DEFAULT_HEIGHT
-        df["movie_prompt"] = ""
-        df["video_length"] = DEFAULT_VIDEO_LENGTH
-        df["fps"] = DEFAULT_FPS
-        df["controlnet_image"] = ""
+        for col, default in VIDEO_DEFAULTS.items():
+            df[col] = default
     else:
         missing_cols = [c for c in columns if c not in df.columns]
         for c in missing_cols:
-            if c == "selected":
-                df[c] = False
-            elif c == "id":
-                df[c] = ""
-            else:
-                df[c] = ""
-        if "llm_model" in missing_cols:
-            df["llm_model"] = DEFAULT_MODEL
-        if "checkpoint" in missing_cols:
-            df["checkpoint"] = ""
-        if "comfy_vae" in missing_cols:
-            df["comfy_vae"] = ""
-        if "comfy_lora" in missing_cols:
-            df["comfy_lora"] = ""
-        if "temperature" in missing_cols:
-            df["temperature"] = DEFAULT_TEMPERATURE
-        if "max_tokens" in missing_cols:
-            df["max_tokens"] = DEFAULT_MAX_TOKENS
-        if "top_p" in missing_cols:
-            df["top_p"] = DEFAULT_TOP_P
-        if "cfg" in missing_cols:
-            df["cfg"] = DEFAULT_CFG
-        if "steps" in missing_cols:
-            df["steps"] = DEFAULT_STEPS
-        if "seed" in missing_cols:
-            df["seed"] = DEFAULT_SEED
-        if "batch_count" in missing_cols:
-            df["batch_count"] = 1
-        if "width" in missing_cols:
-            df["width"] = DEFAULT_WIDTH
-        if "height" in missing_cols:
-            df["height"] = DEFAULT_HEIGHT
-        if "movie_prompt" in missing_cols:
-            df["movie_prompt"] = ""
-        if "video_length" in missing_cols:
-            df["video_length"] = DEFAULT_VIDEO_LENGTH
-        if "fps" in missing_cols:
-            df["fps"] = DEFAULT_FPS
-        if "controlnet_image" in missing_cols:
-            df["controlnet_image"] = ""
+            df[c] = VIDEO_DEFAULTS.get(c, "")
         df = df[columns]
         df["selected"] = df["selected"].fillna(False).astype(bool)
         df["id"] = df["id"].astype(str)
@@ -157,110 +78,18 @@ def load_image_data(path: str) -> pd.DataFrame:
     Creates a DataFrame with the expected columns when the file does not
     exist. Missing columns are added with default values.
     """
-    columns = [
-        "selected",
-        "id",
-        "category",
-        "tags",
-        "nsfw",
-        "ja_prompt",
-        "llm_model",
-        "llm_environment",
-        "image_prompt",
-        "negative_prompt",
-        "sfw_negative_prompt",
-        "image_path",
-        "post_url",
-        "post_site",
-        "post_id",
-        "wordpress_site",
-        "wordpress_account",
-        "views_yesterday",
-        "views_week",
-        "views_month",
-        "checkpoint",
-        "comfy_vae",
-        "comfy_lora",
-        "temperature",
-        "max_tokens",
-        "top_p",
-        "cfg",
-        "steps",
-        "seed",
-        "batch_count",
-        "width",
-        "height",
-    ]
+    columns = IMAGE_COLUMNS
 
     try:
         df = pd.read_csv(path)
     except FileNotFoundError:
         df = pd.DataFrame(columns=columns)
-        df["selected"] = False
-        df["id"] = ""
-        df["category"] = ""
-        df["tags"] = ""
-        df["nsfw"] = False
-        df["ja_prompt"] = ""
-        df["llm_model"] = DEFAULT_MODEL
-        df["llm_environment"] = "Ollama"
-        df["image_prompt"] = ""
-        df["negative_prompt"] = ""
-        df["sfw_negative_prompt"] = ""
-        df["image_path"] = ""
-        df["post_url"] = ""
-        df["post_site"] = ""
-        df["post_id"] = ""
-        df["wordpress_site"] = ""
-        df["wordpress_account"] = ""
-        df["views_yesterday"] = 0
-        df["views_week"] = 0
-        df["views_month"] = 0
-        df["checkpoint"] = ""
-        df["comfy_vae"] = ""
-        df["comfy_lora"] = ""
-        df["temperature"] = DEFAULT_TEMPERATURE
-        df["max_tokens"] = DEFAULT_MAX_TOKENS
-        df["top_p"] = DEFAULT_TOP_P
-        df["cfg"] = DEFAULT_CFG
-        df["steps"] = DEFAULT_STEPS
-        df["seed"] = DEFAULT_SEED
-        df["batch_count"] = 1
-        df["width"] = DEFAULT_WIDTH
-        df["height"] = DEFAULT_HEIGHT
+        for col, default in IMAGE_DEFAULTS.items():
+            df[col] = default
     else:
         missing_cols = [c for c in columns if c not in df.columns]
         for c in missing_cols:
-            if c in ["selected", "nsfw"]:
-                df[c] = False
-            elif c in ["views_yesterday", "views_week", "views_month"]:
-                df[c] = 0
-            elif c == "wordpress_account":
-                df[c] = ""
-            else:
-                df[c] = ""
-        if "llm_model" in missing_cols:
-            df["llm_model"] = DEFAULT_MODEL
-        if "llm_environment" in missing_cols:
-            df["llm_environment"] = "Ollama"
-        if "temperature" in missing_cols:
-            df["temperature"] = DEFAULT_TEMPERATURE
-        if "max_tokens" in missing_cols:
-            df["max_tokens"] = DEFAULT_MAX_TOKENS
-        if "top_p" in missing_cols:
-            df["top_p"] = DEFAULT_TOP_P
-        if "cfg" in missing_cols:
-            df["cfg"] = DEFAULT_CFG
-        if "steps" in missing_cols:
-            df["steps"] = DEFAULT_STEPS
-        if "seed" in missing_cols:
-            df["seed"] = DEFAULT_SEED
-        if "batch_count" in missing_cols:
-            df["batch_count"] = 1
-        if "width" in missing_cols:
-            df["width"] = DEFAULT_WIDTH
-        if "height" in missing_cols:
-            df["height"] = DEFAULT_HEIGHT
+            df[c] = IMAGE_DEFAULTS.get(c, "")
 
         df = df[columns]
         df["selected"] = df["selected"].fillna(False).astype(bool)
@@ -270,7 +99,7 @@ def load_image_data(path: str) -> pd.DataFrame:
         df["tags"] = df["tags"].fillna("").astype(str)
         df["ja_prompt"] = df["ja_prompt"].fillna("").astype(str)
         df["llm_model"] = df["llm_model"].fillna(DEFAULT_MODEL).astype(str)
-        df["llm_environment"] = df["llm_environment"].fillna("Ollama").astype(str)
+        df["llm_environment"] = df["llm_environment"].fillna(IMAGE_DEFAULTS["llm_environment"]).astype(str)
         df["image_prompt"] = df["image_prompt"].fillna("").astype(str)
         df["negative_prompt"] = df["negative_prompt"].fillna("").astype(str)
         df["sfw_negative_prompt"] = df["sfw_negative_prompt"].fillna("").astype(str)
@@ -281,8 +110,6 @@ def load_image_data(path: str) -> pd.DataFrame:
         df["wordpress_site"] = df["wordpress_site"].fillna("").astype(str)
         df["wordpress_account"] = df["wordpress_account"].fillna("").astype(str)
         for vcol in ["views_yesterday", "views_week", "views_month"]:
-            df[vcol] = (
-                pd.to_numeric(df[vcol], errors="coerce").fillna(0).astype(int)
-            )
+            df[vcol] = pd.to_numeric(df[vcol], errors="coerce").fillna(0).astype(int)
     return df
 
