@@ -96,3 +96,22 @@ def test_load_image_data_adds_post_columns(tmp_path):
     assert df["sfw_negative_prompt"].eq("").all()
     assert "llm_environment" in df.columns
     assert df["llm_environment"].eq("Ollama").all()
+
+
+def test_load_image_data_sample():
+    df = load_image_data("images.csv")
+    assert len(df) == 2
+
+    row1 = df.iloc[0]
+    assert row1["id"] == "1"
+    assert row1["category"] == "cat1"
+    assert row1["tags"] == "tag1"
+    assert bool(row1["nsfw"]) is False
+    assert row1["ja_prompt"] == "サンプル1"
+    assert row1["llm_model"] == "gpt-oss:20b"
+    assert row1["image_prompt"] == "Sample prompt 1"
+
+    row2 = df.iloc[1]
+    assert row2["id"] == "2"
+    assert bool(row2["nsfw"]) is True
+    assert row2["views_week"] == 2
