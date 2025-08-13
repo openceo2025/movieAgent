@@ -14,6 +14,7 @@ from .csv_schema import (
     DEFAULT_HEIGHT,
     DEFAULT_FPS,
     DEFAULT_VIDEO_LENGTH,
+    DEFAULT_TIMEOUT,
     VIDEO_COLUMNS,
     VIDEO_DEFAULTS,
     IMAGE_COLUMNS,
@@ -109,6 +110,10 @@ def load_image_data(path: str) -> pd.DataFrame:
         df["post_id"] = df["post_id"].fillna("").astype(str)
         df["wordpress_site"] = df["wordpress_site"].fillna("").astype(str)
         df["wordpress_account"] = df["wordpress_account"].fillna("").astype(str)
+        df["checkpoint"] = df["checkpoint"].fillna("").astype(str)
+        df["comfy_vae"] = df["comfy_vae"].fillna("").astype(str)
+        df["comfy_lora"] = df["comfy_lora"].fillna("").astype(str)
+        df["timeout"] = pd.to_numeric(df["timeout"], errors="coerce").fillna(DEFAULT_TIMEOUT).astype(int)
         for vcol in ["views_yesterday", "views_week", "views_month"]:
             df[vcol] = pd.to_numeric(df[vcol], errors="coerce").fillna(0).astype(int)
     return df

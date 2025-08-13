@@ -113,3 +113,14 @@ def test_load_image_data_sample():
     assert row2["id"] == "2"
     assert bool(row2["nsfw"]) is True
     assert row2["views_week"] == 2
+
+
+def test_load_image_data_sanitizes_strings(tmp_path):
+    path = tmp_path / "img.csv"
+    pd.DataFrame({"id": ["1"], "checkpoint": [""], "comfy_vae": [pd.NA]}).to_csv(
+        path, index=False
+    )
+    df = load_image_data(path)
+    assert df.loc[0, "checkpoint"] == ""
+    assert df.loc[0, "comfy_vae"] == ""
+    assert df.loc[0, "comfy_lora"] == ""
