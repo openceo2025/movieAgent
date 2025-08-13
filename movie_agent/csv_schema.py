@@ -10,6 +10,7 @@ DEFAULT_WIDTH = 1024
 DEFAULT_HEIGHT = 1024
 DEFAULT_FPS = 24
 DEFAULT_VIDEO_LENGTH = 3
+DEFAULT_TIMEOUT = 300
 
 # Video CSV schema
 VIDEO_COLUMNS = [
@@ -106,6 +107,7 @@ IMAGE_COLUMNS = [
     "batch_count",
     "width",
     "height",
+    "timeout",
 ]
 
 IMAGE_DEFAULTS = {
@@ -141,4 +143,5 @@ IMAGE_DEFAULTS = {
     "batch_count": 1,
     "width": DEFAULT_WIDTH,
     "height": DEFAULT_HEIGHT,
+    "timeout": DEFAULT_TIMEOUT,
 }
