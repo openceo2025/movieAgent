@@ -14,8 +14,8 @@ from .comfyui import (
     DEFAULT_STEPS,
 )
 from . import framepack
-from .ollama import list_ollama_models, generate_story_prompt, DEBUG_MODE
-from .lmstudio import list_lmstudio_models, generate_story_prompt_lmstudio
+from .ollama import DEBUG_MODE
+from .llm_helpers import select_llm_models, generate_prompt_for_row
 from .csv_manager import (
     load_data,
     save_data,
@@ -69,47 +69,6 @@ def log_to_console(data: dict) -> None:
     component_html(
         f"<script>console.log('FramePack request:', {json.dumps(data)});</script>",
         height=0,
-    )
-
-
-def select_llm_models(df: pd.DataFrame) -> list[str]:
-    """Return available LLM models based on the ``llm_environment`` column."""
-    if (
-        "llm_environment" in df.columns
-        and df["llm_environment"].astype(str).str.lower().eq("lmstudio").any()
-    ):
-        return list_lmstudio_models()
-    return list_ollama_models()
-
-
-def generate_prompt_for_row(
-    row: pd.Series,
-    synopsis: str,
-    model: str,
-    temperature: float,
-    max_tokens: int,
-    top_p: float,
-    timeout: int,
-) -> str | None:
-    """Generate a story prompt using the appropriate backend."""
-    env = str(row.get("llm_environment", "")).strip().lower()
-    if env == "lmstudio":
-        return generate_story_prompt_lmstudio(
-            synopsis,
-            model,
-            temperature=temperature,
-            max_tokens=max_tokens,
-            top_p=top_p,
-            timeout=timeout,
-        )
-    return generate_story_prompt(
-        synopsis,
-        model,
-        temperature,
-        max_tokens,
-        top_p,
-        debug=DEBUG_MODE,
-        timeout=timeout,
     )
 
 

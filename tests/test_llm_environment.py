@@ -1,7 +1,7 @@
 import pandas as pd
 
 from movie_agent.csv_manager import load_image_data
-from movie_agent import image_ui
+from movie_agent import llm_helpers
 
 
 def test_load_image_data_sets_llm_environment(tmp_path):
@@ -23,10 +23,10 @@ def test_generate_prompt_for_row_lmstudio(monkeypatch):
         calls["ollama"] = True
         return "ol"
 
-    monkeypatch.setattr(image_ui, "generate_story_prompt_lmstudio", fake_lmstudio)
-    monkeypatch.setattr(image_ui, "generate_story_prompt", fake_ollama)
+    monkeypatch.setattr(llm_helpers, "generate_story_prompt_lmstudio", fake_lmstudio)
+    monkeypatch.setattr(llm_helpers, "generate_story_prompt", fake_ollama)
 
-    result = image_ui.generate_prompt_for_row(row, "ctx", "model", 0.5, 10, 0.9, 30)
+    result = llm_helpers.generate_prompt_for_row(row, "ctx", "model", 0.5, 10, 0.9, 30)
     assert result == "lm"
     assert calls.get("lmstudio")
     assert "ollama" not in calls
@@ -44,10 +44,10 @@ def test_generate_prompt_for_row_ollama(monkeypatch):
         calls["ollama"] = True
         return "ol"
 
-    monkeypatch.setattr(image_ui, "generate_story_prompt_lmstudio", fake_lmstudio)
-    monkeypatch.setattr(image_ui, "generate_story_prompt", fake_ollama)
+    monkeypatch.setattr(llm_helpers, "generate_story_prompt_lmstudio", fake_lmstudio)
+    monkeypatch.setattr(llm_helpers, "generate_story_prompt", fake_ollama)
 
-    result = image_ui.generate_prompt_for_row(row, "ctx", "model", 0.5, 10, 0.9, 30)
+    result = llm_helpers.generate_prompt_for_row(row, "ctx", "model", 0.5, 10, 0.9, 30)
     assert result == "ol"
     assert calls.get("ollama")
     assert "lmstudio" not in calls
