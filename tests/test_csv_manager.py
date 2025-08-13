@@ -124,3 +124,22 @@ def test_load_image_data_sanitizes_strings(tmp_path):
     assert df.loc[0, "checkpoint"] == ""
     assert df.loc[0, "comfy_vae"] == ""
     assert df.loc[0, "comfy_lora"] == ""
+
+
+def test_load_image_data_ignores_blank_rows(tmp_path):
+    path = tmp_path / "img.csv"
+    pd.DataFrame(
+        {
+            "id": ["1"],
+            "category": ["cat"],
+            "tags": ["tag"],
+            "nsfw": [False],
+            "ja_prompt": ["prompt"],
+        }
+    ).to_csv(path, index=False)
+    with open(path, "a", encoding="utf-8") as f:
+        f.write("\n")
+
+    df = load_image_data(path)
+    assert len(df) == 1
+    assert df.iloc[0]["id"] == "1"
