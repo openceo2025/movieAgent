@@ -11,6 +11,7 @@ from typing import Optional, Dict, Any
 import requests
 import streamlit as st
 import pandas as pd
+from movie_agent.utils import coerce_int, coerce_float, rerun_with_message
 from movie_agent.comfyui import (
     list_comfy_models,
     generate_image,
@@ -53,46 +54,6 @@ DEFAULT_TIMEOUT = 300
 DEFAULT_BATCH = 1
 
 st.set_page_config(page_title="Image Agent", layout="wide")
-
-
-def coerce_int(value, default, label, row_id, min_value=None):
-    """Safely convert ``value`` to int or return ``default`` with a toast."""
-    if pd.isna(value) or str(value).strip() == "":
-        return default
-    try:
-        value = int(value)
-    except (ValueError, TypeError):
-        st.toast(f"Invalid {label} for row {row_id}; using default {default}")
-        return default
-    if min_value is not None and value < min_value:
-        st.toast(
-            f"{label.capitalize()} must be >= {min_value} for row {row_id}; using {default}"
-        )
-        return default
-    return value
-
-
-def coerce_float(value, default, label, row_id, min_value=None):
-    """Safely convert ``value`` to float or return ``default`` with a toast."""
-    if pd.isna(value) or str(value).strip() == "":
-        return default
-    try:
-        value = float(value)
-    except (ValueError, TypeError):
-        st.toast(f"Invalid {label} for row {row_id}; using default {default}")
-        return default
-    if min_value is not None and value < min_value:
-        st.toast(
-            f"{label.capitalize()} must be >= {min_value} for row {row_id}; using {default}"
-        )
-        return default
-    return value
-
-
-def rerun_with_message(message: str) -> None:
-    """Trigger st.rerun() and show a message after reload."""
-    st.session_state["just_rerun"] = message
-    st.rerun()
 
 
 def build_image_prompt_context(row: pd.Series) -> str:

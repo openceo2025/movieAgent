@@ -6,6 +6,7 @@ import os
 import random
 from pathlib import Path
 from streamlit.components.v1 import html as component_html
+from movie_agent.utils import rerun_with_message
 from .comfyui import (
     list_comfy_models,
     generate_image,
@@ -69,12 +70,6 @@ def log_to_console(data: dict) -> None:
         f"<script>console.log('FramePack request:', {json.dumps(data)});</script>",
         height=0,
     )
-
-
-def rerun_with_message(message: str) -> None:
-    """Trigger st.rerun() and show a message after reload."""
-    st.session_state["just_rerun"] = message
-    st.rerun()
 
 
 def select_llm_models(df: pd.DataFrame) -> list[str]:
