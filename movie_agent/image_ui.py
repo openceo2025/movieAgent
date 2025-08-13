@@ -34,6 +34,7 @@ from movie_agent.csv_manager import (
     DEFAULT_SEED,
     DEFAULT_TEMPERATURE,
 )
+from movie_agent.row_utils import iterate_selected
 
 # Parse CLI arguments passed after `--` when launching via Streamlit
 parser = argparse.ArgumentParser(add_help=False)
@@ -407,10 +408,11 @@ def main() -> None:
 
     prompt_col, gen_col, post_col, anal_col = st.columns(4)
 
+
     if prompt_col.button("Generate prompt"):
         df = st.session_state.image_df.copy()
-        selected = df[df["selected"]]
-        for idx, row in selected.iterrows():
+
+        def process(idx: int, row: pd.Series) -> None:
             base = row.get("ja_prompt", "")
             nsfw = bool(row.get("nsfw"))
             if not row.get("image_prompt"):
@@ -419,7 +421,6 @@ def main() -> None:
                         model = row.get("llm_model")
                         if not model:
                             model = DEFAULT_MODEL
-                        # Request the full prompt response without streaming
                         kwargs = {}
                         for key in ("temperature", "max_tokens", "top_p"):
                             val = row.get(key)
@@ -433,9 +434,7 @@ def main() -> None:
                             kwargs.get("temperature", DEFAULT_TEMPERATURE),
                             kwargs.get("max_tokens"),
                             kwargs.get("top_p"),
-                            int(
-                                row.get("timeout", DEFAULT_TIMEOUT) or DEFAULT_TIMEOUT
-                            ),
+                            int(row.get("timeout", DEFAULT_TIMEOUT) or DEFAULT_TIMEOUT),
                         )
                         if prompt:
                             if nsfw:
@@ -453,19 +452,22 @@ def main() -> None:
                     f"Row {row.get('id', idx)} already has an image_prompt",
                     icon="⚠️",
                 )
+
+        iterate_selected(df, process)
         st.session_state.image_df = df
         if st.session_state.autosave:
             save_data(df, CSV_FILE)
         rerun_with_message("Page reloaded after generating prompts")
 
+
     if gen_col.button("Generate images"):
         df = st.session_state.image_df
-        selected = df[df["selected"]]
-        for idx, row in selected.iterrows():
+
+        def process(idx: int, row: pd.Series) -> None:
             prompt = row.get("image_prompt", "")
             if not prompt:
                 st.warning(f"No image_prompt for row {row.get('id', idx)}")
-                continue
+                return
             neg_prompt = row.get("negative_prompt", "") or DEFAULT_NEGATIVE_PROMPT
             sfw_neg = row.get("sfw_negative_prompt", "")
             if row.get("nsfw"):
@@ -478,7 +480,7 @@ def main() -> None:
                     checkpoint = st.session_state.comfy_models[0]
                 else:
                     st.warning("No ComfyUI checkpoints available")
-                    continue
+                    return
             vae = row.get("comfy_vae") or ""
             row_id = row.get("id", idx)
             seed = row.get("seed")
@@ -541,21 +543,22 @@ def main() -> None:
                     )
 
             df.at[idx, "image_path"] = str(folder.resolve())
+
+        iterate_selected(df, process)
         st.session_state.image_df = df
         if st.session_state.autosave:
             save_data(df, CSV_FILE)
         rerun_with_message("Page reloaded after generating images")
 
+
     if post_col.button("Post"):
         df = st.session_state.image_df
-        selected = df[df["selected"]]
-        selected_indices = selected.index.tolist()
-        for idx in selected_indices:
-            row = df.loc[idx]
+
+        def process(idx: int, row: pd.Series) -> None:
             image_path = row.get("image_path", "")
             if not image_path or not os.path.exists(image_path):
                 st.warning(f"No image file for row {row.get('id', idx)}")
-                continue
+                return
             try:
                 result = post_to_wordpress(row)
                 if result:
@@ -568,22 +571,25 @@ def main() -> None:
                 message = f"Posting failed for row {row.get('id', idx)}: {e}"
                 st.error(message)
                 print(f"[ERROR] {message}")
+
+        iterate_selected(df, process)
         st.session_state.image_df = df
         if st.session_state.autosave:
             save_data(df, CSV_FILE)
         rerun_with_message("Page reloaded after posting")
 
+
     if anal_col.button("Analysis"):
         df = st.session_state.image_df
-        selected = df[df["selected"]]
-        for idx, row in selected.iterrows():
+
+        def process(idx: int, row: pd.Series) -> None:
             site = row.get("post_site", "")
             post_id = row.get("post_id", "")
             if not site or not post_id:
                 st.warning(
                     f"No post_site/post_id for row {row.get('id', idx)}"
                 )
-                continue
+                return
             try:
                 counts = fetch_view_counts(site, post_id)
                 for column, value in counts.items():
@@ -592,6 +598,8 @@ def main() -> None:
                 st.error(
                     f"Analysis failed for row {row.get('id', idx)}: {e}"
                 )
+
+        iterate_selected(df, process)
         st.session_state.image_df = df
         if st.session_state.autosave:
             save_data(df, CSV_FILE)
