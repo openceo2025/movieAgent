@@ -88,6 +88,7 @@ def load_image_data(path: str) -> pd.DataFrame:
         for col, default in IMAGE_DEFAULTS.items():
             df[col] = default
     else:
+        df = df.dropna(how="all")
         missing_cols = [c for c in columns if c not in df.columns]
         for c in missing_cols:
             df[c] = IMAGE_DEFAULTS.get(c, "")

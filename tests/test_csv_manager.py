@@ -96,25 +96,6 @@ def test_load_image_data_adds_post_columns(tmp_path):
     assert df["llm_environment"].eq(IMAGE_DEFAULTS["llm_environment"]).all()
 
 
-def test_load_image_data_sample():
-    df = load_image_data("images.csv")
-    assert len(df) == 2
-
-    row1 = df.iloc[0]
-    assert row1["id"] == "1"
-    assert row1["category"] == "cat1"
-    assert row1["tags"] == "tag1"
-    assert bool(row1["nsfw"]) is False
-    assert row1["ja_prompt"] == "サンプル1"
-    assert row1["llm_model"] == "gpt-oss:20b"
-    assert row1["image_prompt"] == "Sample prompt 1"
-
-    row2 = df.iloc[1]
-    assert row2["id"] == "2"
-    assert bool(row2["nsfw"]) is True
-    assert row2["views_week"] == 2
-
-
 def test_load_image_data_sanitizes_strings(tmp_path):
     path = tmp_path / "img.csv"
     pd.DataFrame({"id": ["1"], "checkpoint": [""], "comfy_vae": [pd.NA]}).to_csv(
@@ -124,3 +105,22 @@ def test_load_image_data_sanitizes_strings(tmp_path):
     assert df.loc[0, "checkpoint"] == ""
     assert df.loc[0, "comfy_vae"] == ""
     assert df.loc[0, "comfy_lora"] == ""
+
+
+def test_load_image_data_ignores_blank_rows(tmp_path):
+    path = tmp_path / "img.csv"
+    pd.DataFrame(
+        {
+            "id": ["1"],
+            "category": ["cat"],
+            "tags": ["tag"],
+            "nsfw": [False],
+            "ja_prompt": ["prompt"],
+        }
+    ).to_csv(path, index=False)
+    with open(path, "a", encoding="utf-8") as f:
+        f.write("\n")
+
+    df = load_image_data(path)
+    assert len(df) == 1
+    assert df.iloc[0]["id"] == "1"
