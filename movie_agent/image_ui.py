@@ -7,6 +7,7 @@ import base64
 import json
 import random
 from typing import Optional, Dict, Any
+import logging
 
 import requests
 import streamlit as st
@@ -32,13 +33,15 @@ from movie_agent.csv_manager import (
     DEFAULT_TEMPERATURE,
 )
 from movie_agent.row_utils import iterate_selected
+from movie_agent.logger import logger
 
 # Parse CLI arguments passed after `--` when launching via Streamlit
 parser = argparse.ArgumentParser(add_help=False)
 parser.add_argument("--debug", action="store_true", help="Enable debug logging")
 args, _ = parser.parse_known_args()
 if args.debug:
-    print("[DEBUG] Debug mode enabled")
+    logger.setLevel(logging.DEBUG)
+    logger.debug("Debug mode enabled")
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 CSV_FILE = str(BASE_DIR / "images.csv")
@@ -92,7 +95,9 @@ def post_to_wordpress(row: pd.Series) -> Optional[Dict[str, Any]]:
     # The `wordpress_site` field is a key (not a URL) used for account/site lookup.
     site = (row.get("wordpress_site") or os.getenv("WORDPRESS_SITE", "")).strip()
     if not site:
-        st.error("WordPressサイトが指定されていません")
+        message = "WordPressサイトが指定されていません"
+        logger.error(message)
+        st.error(message)
         return None
 
     media = []
@@ -104,7 +109,9 @@ def post_to_wordpress(row: pd.Series) -> Optional[Dict[str, Any]]:
 
     account = row.get("wordpress_account")
     if account is None or str(account).strip() == "":
-        st.error("WordPressアカウントが指定されていません")
+        message = "WordPressアカウントが指定されていません"
+        logger.error(message)
+        st.error(message)
         return None
     payload = {
         "account": account,
@@ -120,8 +127,10 @@ def post_to_wordpress(row: pd.Series) -> Optional[Dict[str, Any]]:
 
     debug_payload = payload.copy()
     debug_payload["media"] = [m["filename"] for m in media]
-    print(
-        f"[DEBUG] POST {api_url} payload: {json.dumps(debug_payload, ensure_ascii=False)}"
+    logger.debug(
+        "POST %s payload: %s",
+        api_url,
+        json.dumps(debug_payload, ensure_ascii=False),
     )
 
     try:
@@ -129,14 +138,18 @@ def post_to_wordpress(row: pd.Series) -> Optional[Dict[str, Any]]:
         resp.raise_for_status()
     except requests.HTTPError as e:
         st.error(f"WordPress投稿に失敗しました: {e}")
+        logger.exception("WordPress posting failed")
         return None
     except requests.RequestException as e:
         st.error(f"WordPress投稿に失敗しました: {e}")
+        logger.exception("WordPress posting failed")
         return None
     if resp.status_code not in (200, 201):
-        st.error(
+        message = (
             f"WordPress投稿に失敗しました: {resp.status_code} {resp.text}"
         )
+        logger.error(message)
+        st.error(message)
         return None
     data = resp.json()
     link = data.get("link")
@@ -298,9 +311,11 @@ def main() -> None:
                                 f"Prompt generated for row {row.get('id', idx)}"
                             )
                     except Exception as e:
-                        st.error(
+                        message = (
                             f"Prompt generation failed for row {row.get('id', idx)}: {e}"
                         )
+                        logger.exception(message)
+                        st.error(message)
             else:
                 st.toast(
                     f"Row {row.get('id', idx)} already has an image_prompt",
@@ -392,9 +407,11 @@ def main() -> None:
                             f"Failed to generate image for row {row.get('id', idx)}"
                         )
                 except Exception as e:
-                    st.error(
+                    message = (
                         f"Image generation error for row {row.get('id', idx)}: {e}"
                     )
+                    logger.exception(message)
+                    st.error(message)
 
             df.at[idx, "image_path"] = str(folder.resolve())
 
@@ -420,11 +437,11 @@ def main() -> None:
                     df.at[idx, "post_site"] = result["site"]
                     df.at[idx, "post_id"] = str(result["id"])
                     st.success(f"Posted: {result['link']}")
-                    print(f"[INFO] Posted: {result['link']}")
+                    logger.info(f"Posted: {result['link']}")
             except Exception as e:
                 message = f"Posting failed for row {row.get('id', idx)}: {e}"
+                logger.exception(message)
                 st.error(message)
-                print(f"[ERROR] {message}")
 
         iterate_selected(df, process)
         st.session_state.image_df = df
@@ -449,9 +466,9 @@ def main() -> None:
                 for column, value in counts.items():
                     df.at[idx, column] = value
             except Exception as e:
-                st.error(
-                    f"Analysis failed for row {row.get('id', idx)}: {e}"
-                )
+                message = f"Analysis failed for row {row.get('id', idx)}: {e}"
+                logger.exception(message)
+                st.error(message)
 
         iterate_selected(df, process)
         st.session_state.image_df = df
