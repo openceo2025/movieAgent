@@ -25,6 +25,7 @@ from .csv_manager import (
     DEFAULT_FPS,
     DEFAULT_VIDEO_LENGTH,
 )
+from .row_utils import iterate_selected
 
 # Parse CLI arguments passed after `--` when launching via Streamlit
 parser = argparse.ArgumentParser(add_help=False)
@@ -291,8 +292,8 @@ def main() -> None:
 
     if st.button("Generate story prompts", disabled=generate_disabled):
         df = st.session_state.video_df.copy()
-        found_any_panels = False
-        for idx, row in df[selected_rows].iterrows():
+
+        def process(idx: int, row: pd.Series) -> None:
             synopsis = row.get("synopsis", "")
             model = row.get("llm_model", DEFAULT_MODEL)
             if pd.isna(model) or model == "":
@@ -312,17 +313,22 @@ def main() -> None:
             if pd.isna(top_p) or top_p == "":
                 top_p = DEFAULT_TOP_P
             top_p = float(top_p)
+
             timeout = row.get("timeout", DEFAULT_OLLAMA_TIMEOUT)
             if pd.isna(timeout) or timeout == "":
                 timeout = DEFAULT_OLLAMA_TIMEOUT
             timeout = int(timeout)
+
             nsfw_flag = row.get("nsfw", "")
             if pd.notna(nsfw_flag) and str(nsfw_flag).strip().upper() == "Y":
-                synopsis += " --NSFW"
-            if synopsis:
+                synopsis_local = synopsis + " --NSFW"
+            else:
+                synopsis_local = synopsis
+
+            if synopsis_local:
                 prompt = generate_prompt_for_row(
                     row,
-                    synopsis,
+                    synopsis_local,
                     model,
                     temperature,
                     max_tokens,
@@ -331,6 +337,8 @@ def main() -> None:
                 )
                 if prompt is not None:
                     df.at[idx, "story_prompt"] = prompt
+
+        iterate_selected(df, process)
         st.session_state.video_df = df
         save_data(df, CSV_FILE)
         st.session_state.last_saved_df = df.copy()
@@ -340,16 +348,17 @@ def main() -> None:
 
     if st.button("Generate images", disabled=generate_disabled):
         df = st.session_state.video_df.copy()
-        for idx, row in df[selected_rows].iterrows():
+
+        def process(idx: int, row: pd.Series) -> None:
             prompt = row.get("story_prompt", "")
             checkpoint = row.get("checkpoint", "")
             vae = row.get("comfy_vae", "")
             if not prompt:
                 st.warning(f"No story prompt for row {row.get('id', idx)}")
-                continue
+                return
+
             seed_val = row.get("seed", "")
             if pd.isna(seed_val) or str(seed_val).strip() == "":
-                # Empty -> generate a random seed on our side
                 seed_val = random.randint(0, 2**32 - 1)
             else:
                 seed_val = int(seed_val)
@@ -373,6 +382,7 @@ def main() -> None:
             if pd.isna(width) or str(width).strip() == "":
                 width = DEFAULT_WIDTH
             width = int(width)
+
             height = row.get("height", DEFAULT_HEIGHT)
             if pd.isna(height) or str(height).strip() == "":
                 height = DEFAULT_HEIGHT
@@ -390,12 +400,9 @@ def main() -> None:
 
             for b in range(batch_count):
                 if seed_val == -1:
-                    # -1 is passed through so ComfyUI handles randomization
                     current_seed = -1
                 else:
-                    current_seed = (
-                        seed_val + b if batch_count > 1 else seed_val
-                    )
+                    current_seed = seed_val + b if batch_count > 1 else seed_val
                 img_bytes = generate_image(
                     prompt,
                     checkpoint,
@@ -421,6 +428,7 @@ def main() -> None:
                     )
                     st.error(message)
 
+        iterate_selected(df, process)
         st.session_state.video_df = df
         save_data(df, CSV_FILE)
         st.session_state.last_saved_df = df.copy()
@@ -432,7 +440,9 @@ def main() -> None:
             print(f"[DEBUG] {int(selected_rows.sum())} rows selected")
         df = st.session_state.video_df.copy()
         found_any_panels = False
-        for idx, row in df[selected_rows].iterrows():
+
+        def process(idx: int, row: pd.Series) -> None:
+            nonlocal found_any_panels
             title = row.get("title", "")
             base_folder = os.path.join(
                 BASE_DIR,
@@ -452,7 +462,7 @@ def main() -> None:
                         f"[DEBUG] No panels found for row {row.get('id', idx)} in {panels_dir}"
                     )
                 st.warning(f"No panels found for row {row.get('id', idx)}")
-                continue
+                return
             found_any_panels = True
             start_image = str(images[0])
             if DEBUG_MODE:
@@ -537,6 +547,8 @@ def main() -> None:
                 st.error(
                     f"Failed to generate video for row {row.get('id', idx)}"
                 )
+
+        iterate_selected(df, process)
         st.session_state.video_df = df
         save_data(df, CSV_FILE)
         st.session_state.last_saved_df = df.copy()
