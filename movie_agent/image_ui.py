@@ -204,68 +204,6 @@ def main() -> None:
     )
 
     df = st.session_state.image_df
-    if "llm_model" not in df.columns:
-        idx = df.columns.get_loc("image_prompt") if "image_prompt" in df.columns else len(df.columns)
-        df.insert(idx, "llm_model", DEFAULT_MODEL)
-    else:
-        df["llm_model"] = df["llm_model"].fillna(DEFAULT_MODEL)
-    if "llm_environment" not in df.columns:
-        idx = df.columns.get_loc("image_prompt") if "image_prompt" in df.columns else len(df.columns)
-        df.insert(idx, "llm_environment", "Ollama")
-    else:
-        df["llm_environment"] = df["llm_environment"].fillna("Ollama")
-
-    # Ensure posting-related columns exist
-    if "post_url" not in df.columns:
-        idx = df.columns.get_loc("image_path") + 1 if "image_path" in df.columns else len(df.columns)
-        df.insert(idx, "post_url", "")
-    else:
-        df["post_url"] = df["post_url"].fillna("")
-
-    if "post_site" not in df.columns:
-        idx = df.columns.get_loc("post_url") + 1
-        df.insert(idx, "post_site", "")
-    else:
-        df["post_site"] = df["post_site"].fillna("")
-
-    if "post_id" not in df.columns:
-        idx = df.columns.get_loc("post_site") + 1
-        df.insert(idx, "post_id", "")
-    else:
-        df["post_id"] = df["post_id"].fillna("")
-
-    if "wordpress_site" not in df.columns:
-        idx = df.columns.get_loc("post_id") + 1
-        df.insert(idx, "wordpress_site", "")
-    else:
-        df["wordpress_site"] = df["wordpress_site"].fillna("")
-    if "wordpress_account" not in df.columns:
-        idx = df.columns.get_loc("wordpress_site") + 1
-        df.insert(idx, "wordpress_account", "")
-    else:
-        df["wordpress_account"] = df["wordpress_account"].fillna("")
-    # "wordpress_site" values are keys, not full URLs.
-    for col in ["checkpoint", "comfy_vae"]:
-        if col not in df.columns:
-            if col == "checkpoint":
-                df[col] = default_checkpoint
-            else:
-                df[col] = ""
-        else:
-            if col == "checkpoint":
-                df[col] = df[col].replace("", default_checkpoint).fillna(
-                    default_checkpoint
-                )
-            else:
-                df[col] = df[col].fillna("")
-    if "timeout" not in df.columns:
-        df["timeout"] = DEFAULT_TIMEOUT
-    else:
-        df["timeout"] = df["timeout"].fillna(DEFAULT_TIMEOUT)
-    if "cfg" not in df.columns:
-        df["cfg"] = DEFAULT_CFG
-    else:
-        df["cfg"] = df["cfg"].replace("", DEFAULT_CFG).fillna(DEFAULT_CFG)
     st.session_state.image_df = df
 
     st.write("### Image Spreadsheet")
