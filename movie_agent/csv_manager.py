@@ -106,6 +106,12 @@ def load_image_data(path: str) -> pd.DataFrame:
         df["alt_text"] = df["alt_text"].fillna("").astype(str)
         df["slug"] = df["slug"].fillna("").astype(str)
         df["excerpt"] = df["excerpt"].fillna("").astype(str)
+        df["canonical_url"] = df["canonical_url"].where(
+            df["canonical_url"].apply(lambda x: isinstance(x, str)), ""
+        ).fillna("").astype(str)
+        df["meta_keywords"] = df["meta_keywords"].where(
+            df["meta_keywords"].apply(lambda x: isinstance(x, str)), ""
+        ).fillna("").astype(str)
         df["json_ld"] = df["json_ld"].fillna("").astype(str)
         df["negative_prompt"] = df["negative_prompt"].fillna("").astype(str)
         df["sfw_negative_prompt"] = df["sfw_negative_prompt"].fillna("").astype(str)

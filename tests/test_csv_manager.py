@@ -136,3 +136,24 @@ def test_load_image_data_ignores_blank_rows(tmp_path):
     df = load_image_data(path)
     assert len(df) == 1
     assert df.iloc[0]["id"] == "1"
+
+
+def test_load_image_data_sanitizes_meta_fields(tmp_path):
+    path = tmp_path / "img.csv"
+    pd.DataFrame(
+        {
+            "id": ["1", "2"],
+            "canonical_url": [123, pd.NA],
+            "meta_keywords": [pd.NA, 456],
+        }
+    ).to_csv(path, index=False)
+
+    df = load_image_data(path)
+    assert df["canonical_url"].tolist() == ["", ""]
+    assert df["meta_keywords"].tolist() == ["", ""]
+
+    save_path = tmp_path / "out.csv"
+    save_data(df, save_path)
+    loaded = pd.read_csv(save_path, dtype=str).fillna("")
+    assert loaded["canonical_url"].tolist() == ["", ""]
+    assert loaded["meta_keywords"].tolist() == ["", ""]
