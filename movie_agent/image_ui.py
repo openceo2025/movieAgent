@@ -34,6 +34,7 @@ from movie_agent.csv_manager import (
 )
 from movie_agent.row_utils import iterate_selected
 from movie_agent.logger import logger
+from movie_agent.lmstudio import translate_with_lmstudio
 
 # Parse CLI arguments passed after `--` when launching via Streamlit
 parser = argparse.ArgumentParser(add_help=False)
@@ -53,11 +54,22 @@ DEFAULT_TIMEOUT = 300
 DEFAULT_BATCH = 1
 TAG_FILE = BASE_DIR / "tag.json"
 
-try:
-    with TAG_FILE.open("r", encoding="utf-8") as f:
-        tags = json.load(f).get("tags", [])
-except (FileNotFoundError, json.JSONDecodeError):
-    tags = []
+
+def load_tags() -> list[str]:
+    """Load tags array from ``tag.json``.
+
+    Returns an empty list if the file is missing or invalid.
+    """
+
+    try:
+        with TAG_FILE.open("r", encoding="utf-8") as f:
+            return json.load(f).get("tags", [])
+    except (FileNotFoundError, json.JSONDecodeError) as e:
+        logger.error("Failed to load tag.json: %s", e)
+        return []
+
+
+tags = load_tags()
 
 st.set_page_config(page_title="Image Agent", layout="wide")
 
@@ -281,7 +293,45 @@ def main() -> None:
         save_data(edited_df, CSV_FILE)
         st.session_state.last_saved_df = edited_df.copy()
 
-    prompt_col, gen_col, post_col, anal_col = st.columns(4)
+    tag_col, prompt_col, gen_col, post_col, anal_col = st.columns(5)
+
+    if tag_col.button("Generate tag"):
+        tag_list = load_tags()
+        if not tag_list:
+            st.error("tag.json からタグを読み込めませんでした")
+        else:
+            df = st.session_state.image_df.copy()
+            idx_counter = 0
+            error = False
+
+            def process(idx: int, row: pd.Series) -> None:
+                nonlocal idx_counter, error
+                if error:
+                    return
+                if idx_counter >= len(tag_list):
+                    df.at[idx, "tags"] = ""
+                    idx_counter += 1
+                    return
+                lang = str(row.get("id") or "").strip()
+                tag = tag_list[idx_counter]
+                result = translate_with_lmstudio(
+                    tag,
+                    lang,
+                    log_prompt=(idx_counter == 0),
+                )
+                if result is None:
+                    st.error("タグの翻訳に失敗しました")
+                    error = True
+                    return
+                df.at[idx, "tags"] = result
+                idx_counter += 1
+
+            iterate_selected(df, process)
+            if not error:
+                st.session_state.image_df = df
+                if st.session_state.autosave:
+                    save_data(df, CSV_FILE)
+                rerun_with_message("Tags generated")
 
 
     if prompt_col.button("Generate prompt"):

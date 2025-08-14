@@ -3,6 +3,7 @@ import requests
 from movie_agent.lmstudio import (
     list_lmstudio_models,
     generate_story_prompt_lmstudio,
+    translate_with_lmstudio,
 )
 
 
@@ -66,4 +67,34 @@ def test_generate_story_prompt_lmstudio(monkeypatch):
         "top_p": 0.9,
     }
     assert result == "Once upon a time"
+
+
+def test_translate_with_lmstudio(monkeypatch):
+    captured = {}
+
+    class FakeResponse:
+        status_code = 200
+
+        def json(self):
+            return {
+                "choices": [{"message": {"content": "bonjour"}}]
+            }
+
+        def raise_for_status(self):
+            pass
+
+    def fake_post(url, json=None, timeout=None):
+        captured["url"] = url
+        captured["json"] = json
+        return FakeResponse()
+
+    monkeypatch.setenv("LMSTUDIO_HOST", "http://example.com")
+    monkeypatch.setattr(requests, "post", fake_post)
+
+    result = translate_with_lmstudio("hello", "fr")
+    assert captured["url"] == "http://example.com/v1/chat/completions"
+    assert "hello" in captured["json"]["messages"][0]["content"]
+    assert "fr" in captured["json"]["messages"][0]["content"]
+    assert "model" not in captured["json"]
+    assert result == "bonjour"
 
