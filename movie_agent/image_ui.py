@@ -487,39 +487,6 @@ def main() -> None:
                 return
 
             alt_text = str(row.get("alt_text", "")).strip()
-            if not alt_text:
-                try:
-                    model = row.get("llm_model") or DEFAULT_MODEL
-                    kwargs: Dict[str, Any] = {}
-                    for key in ("temperature", "max_tokens", "top_p"):
-                        val = row.get(key)
-                        if pd.notna(val) and val != "":
-                            kwargs[key] = val
-                    context = (
-                        "Provide a concise alt text for an image described by the following prompt.\n"
-                        f"Prompt: {prompt}\n"
-                        "Return only the alt text without additional commentary."
-                    )
-                    result = generate_prompt_for_row(
-                        row,
-                        context,
-                        model,
-                        kwargs.get("temperature", DEFAULT_TEMPERATURE),
-                        kwargs.get("max_tokens"),
-                        kwargs.get("top_p"),
-                        int(row.get("timeout", DEFAULT_TIMEOUT) or DEFAULT_TIMEOUT),
-                    )
-                    if result:
-                        alt_text = result.strip()
-                        st.toast(
-                            f"Alt text generated for row {row.get('id', idx)}",
-                        )
-                except Exception as e:
-                    message = (
-                        f"Alt text generation failed for row {row.get('id', idx)}: {e}"
-                    )
-                    logger.exception(message)
-                    st.error(message)
             slug = slugify(prompt)
             if not alt_text:
                 alt_text = slug
