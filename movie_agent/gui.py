@@ -44,6 +44,13 @@ if args.debug:
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 CSV_FILE = str(BASE_DIR / "videos.csv")
+TAG_FILE = BASE_DIR / "tag.json"
+
+try:
+    with TAG_FILE.open("r", encoding="utf-8") as f:
+        tags = json.load(f).get("tags", [])
+except (FileNotFoundError, json.JSONDecodeError):
+    tags = []
 
 # Default generation parameters
 DEFAULT_MODEL = "phi3:mini"
@@ -83,6 +90,7 @@ def main() -> None:
         st.info(msg)
 
     st.title("Streamlit Video Agent")
+    st.caption(", ".join(tags))
 
     if "video_df" not in st.session_state:
         st.session_state.video_df = load_data(CSV_FILE)
