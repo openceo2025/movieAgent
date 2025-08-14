@@ -55,5 +55,5 @@ def test_generate_story_prompt(monkeypatch):
         "model": "phi3:mini",
         "prompt": context,
         "stream": False,
-        "options": {"temperature": 0.8},
+        "options": {"temperature": 0.0},
     }
