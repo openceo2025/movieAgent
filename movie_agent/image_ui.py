@@ -509,9 +509,7 @@ def main() -> None:
                 return
 
             alt_text = str(row.get("alt_text", "")).strip()
-            slug = slugify(prompt)
-            if not alt_text:
-                alt_text = slug
+            alt_text = alt_text or slugify(prompt)
             neg_prompt = row.get("negative_prompt", "") or DEFAULT_NEGATIVE_PROMPT
             sfw_neg = row.get("sfw_negative_prompt", "")
             if row.get("nsfw"):
@@ -571,7 +569,7 @@ def main() -> None:
                         cfg=cfg_val,
                         steps=steps_val,
                         output_dir=folder,
-                        prefix=f"{slug}_{b}",
+                        prefix=f"img_{b}",
                         debug=DEBUG_MODE,
                     )
                     if paths:
