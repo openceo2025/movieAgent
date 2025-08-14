@@ -235,7 +235,10 @@ def main() -> None:
     """Run the Streamlit UI for image generation and posting."""
     msg = st.session_state.pop("just_rerun", None)
     if msg:
-        st.info(msg)
+        if msg.startswith("Run All completed"):
+            st.success(msg)
+        else:
+            st.info(msg)
 
     st.title("Image Generation Agent")
     st.caption(", ".join(tags))
@@ -325,9 +328,28 @@ def main() -> None:
         save_data(edited_df, CSV_FILE)
         st.session_state.last_saved_df = edited_df.copy()
 
-    tag_col, prompt_col, json_col, gen_col, post_col, anal_col = st.columns(6)
+    tag_col, prompt_col, json_col, gen_col, post_col, anal_col, all_col = st.columns(7)
 
-    if tag_col.button("Generate tag"):
+    tag_trigger = tag_col.button("Generate tag")
+    prompt_trigger = prompt_col.button("Generate prompt")
+    json_trigger = json_col.button("Generate JSON-LD")
+    image_trigger = gen_col.button("Generate images")
+    post_trigger = post_col.button("Post")
+    analysis_trigger = anal_col.button("Analysis")
+    all_trigger = all_col.button("Run All")
+
+    if all_trigger:
+        st.session_state["multi_step"] = "tag"
+        st.session_state["run_all_start"] = datetime.now()
+        logger.info("Run All started")
+
+    tag_trigger = tag_trigger or st.session_state.get("multi_step") == "tag"
+    prompt_trigger = prompt_trigger or st.session_state.get("multi_step") == "prompt"
+    json_trigger = json_trigger or st.session_state.get("multi_step") == "json"
+    image_trigger = image_trigger or st.session_state.get("multi_step") == "images"
+    post_trigger = post_trigger or st.session_state.get("multi_step") == "post"
+
+    if tag_trigger:
         tag_list = load_tag_json()
         if not tag_list:
             st.error("tag.json からタグを読み込めませんでした")
@@ -355,10 +377,11 @@ def main() -> None:
             if not error:
                 st.session_state.image_df = df
                 save_data(df, CSV_FILE)
+                if st.session_state.get("multi_step") == "tag":
+                    st.session_state["multi_step"] = "prompt"
                 rerun_with_message("Tags generated")
 
-
-    if prompt_col.button("Generate prompt"):
+    if prompt_trigger:
         df = st.session_state.image_df.copy()
 
         def process(idx: int, row: pd.Series) -> None:
@@ -402,10 +425,11 @@ def main() -> None:
         st.session_state.image_df = df
         if st.session_state.autosave:
             save_data(df, CSV_FILE)
+        if st.session_state.get("multi_step") == "prompt":
+            st.session_state["multi_step"] = "json"
         rerun_with_message("Page reloaded after generating prompts")
 
-
-    if json_col.button("Generate JSON-LD"):
+    if json_trigger:
         df = st.session_state.image_df.copy()
         cache: Dict[str, Any] = st.session_state.setdefault("json_ld_cache", {})
 
@@ -490,10 +514,11 @@ def main() -> None:
         st.session_state.image_df = df
         if st.session_state.autosave:
             save_data(df, CSV_FILE)
+        if st.session_state.get("multi_step") == "json":
+            st.session_state["multi_step"] = "images"
         rerun_with_message("Page reloaded after generating JSON-LD")
 
-
-    if gen_col.button("Generate images"):
+    if image_trigger:
         df = st.session_state.image_df
 
         def process(idx: int, row: pd.Series) -> None:
@@ -587,10 +612,11 @@ def main() -> None:
         st.session_state.image_df = df
         if st.session_state.autosave:
             save_data(df, CSV_FILE)
+        if st.session_state.get("multi_step") == "images":
+            st.session_state["multi_step"] = "post"
         rerun_with_message("Page reloaded after generating images")
 
-
-    if post_col.button("Post"):
+    if post_trigger:
         df = st.session_state.image_df
 
         def process(idx: int, row: pd.Series) -> None:
@@ -615,10 +641,24 @@ def main() -> None:
         st.session_state.image_df = df
         if st.session_state.autosave:
             save_data(df, CSV_FILE)
-        rerun_with_message("Page reloaded after posting")
+        if st.session_state.get("multi_step") == "post":
+            st.session_state.pop("multi_step", None)
+            start = st.session_state.pop("run_all_start", None)
+            if start:
+                elapsed = datetime.now() - start
+                total_seconds = int(elapsed.total_seconds())
+                h, rem = divmod(total_seconds, 3600)
+                m, s = divmod(rem, 60)
+                hms = f"{h}h {m}m {s}s"
+                message = f"Run All completed in {hms}"
+                logger.info(message)
+                rerun_with_message(message)
+            else:
+                rerun_with_message("Page reloaded after posting")
+        else:
+            rerun_with_message("Page reloaded after posting")
 
-
-    if anal_col.button("Analysis"):
+    if analysis_trigger:
         df = st.session_state.image_df
 
         def process(idx: int, row: pd.Series) -> None:
