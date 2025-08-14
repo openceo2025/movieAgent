@@ -364,45 +364,39 @@ def main() -> None:
         def process(idx: int, row: pd.Series) -> None:
             base = row.get("ja_prompt", "")
             nsfw = bool(row.get("nsfw"))
-            if not row.get("image_prompt"):
-                if base:
-                    try:
-                        model = row.get("llm_model")
-                        if not model:
-                            model = DEFAULT_MODEL
-                        kwargs = {}
-                        for key in ("max_tokens", "top_p"):
-                            val = row.get(key)
-                            if pd.notna(val) and val != "":
-                                kwargs[key] = val
-                        synopsis = build_image_prompt_context(row)
-                        prompt = generate_prompt_for_row(
-                            row,
-                            synopsis,
-                            model,
-                            0.8,
-                            kwargs.get("max_tokens"),
-                            kwargs.get("top_p"),
-                            int(row.get("timeout", DEFAULT_TIMEOUT) or DEFAULT_TIMEOUT),
+            if base:
+                try:
+                    model = row.get("llm_model")
+                    if not model:
+                        model = DEFAULT_MODEL
+                    kwargs = {}
+                    for key in ("max_tokens", "top_p"):
+                        val = row.get(key)
+                        if pd.notna(val) and val != "":
+                            kwargs[key] = val
+                    synopsis = build_image_prompt_context(row)
+                    prompt = generate_prompt_for_row(
+                        row,
+                        synopsis,
+                        model,
+                        0.8,
+                        kwargs.get("max_tokens"),
+                        kwargs.get("top_p"),
+                        int(row.get("timeout", DEFAULT_TIMEOUT) or DEFAULT_TIMEOUT),
+                    )
+                    if prompt:
+                        if nsfw:
+                            prompt = f"{prompt.rstrip()} NSFW"
+                        df.at[idx, "image_prompt"] = prompt
+                        st.toast(
+                            f"Prompt generated for row {row.get('id', idx)}"
                         )
-                        if prompt:
-                            if nsfw:
-                                prompt = f"{prompt.rstrip()} NSFW"
-                            df.at[idx, "image_prompt"] = prompt
-                            st.toast(
-                                f"Prompt generated for row {row.get('id', idx)}"
-                            )
-                    except Exception as e:
-                        message = (
-                            f"Prompt generation failed for row {row.get('id', idx)}: {e}"
-                        )
-                        logger.exception(message)
-                        st.error(message)
-            else:
-                st.toast(
-                    f"Row {row.get('id', idx)} already has an image_prompt",
-                    icon="⚠️",
-                )
+                except Exception as e:
+                    message = (
+                        f"Prompt generation failed for row {row.get('id', idx)}: {e}"
+                    )
+                    logger.exception(message)
+                    st.error(message)
 
         iterate_selected(df, process)
         st.session_state.image_df = df
