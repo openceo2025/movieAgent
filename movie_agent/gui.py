@@ -77,7 +77,7 @@ def log_to_console(data: dict) -> None:
 
 def main() -> None:
     """Run the Streamlit GUI."""
-    tag_path = BASE_DIR / "tag.json"
+    tag_path = Path(__file__).resolve().parent / "tag.json"
     tags: list[str] = []
     if tag_path.exists():
         with tag_path.open(encoding="utf-8") as f:
