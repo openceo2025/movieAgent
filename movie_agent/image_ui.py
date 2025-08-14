@@ -101,9 +101,12 @@ def build_json_ld_context(row: pd.Series) -> str:
     title = row.get("slug") or row.get("id") or ""
     description = row.get("excerpt") or row.get("image_prompt") or ""
     return (
-        "Create a JSON-LD object for an image post.\n"
+        "Generate data for an image post.\n"
         f"Title: {title}\n"
         f"Description: {description}\n"
+        "Return a JSON object with keys 'json_ld' and 'alt_text'.\n"
+        "The 'json_ld' value must be a JSON-LD object.\n"
+        "The 'alt_text' value must be a concise English alt text.\n"
         "Return only the JSON object without explanation."
     )
 
@@ -413,49 +416,59 @@ def main() -> None:
         df = st.session_state.image_df.copy()
 
         def process(idx: int, row: pd.Series) -> None:
-            if not row.get("json_ld"):
-                try:
-                    model = row.get("llm_model") or DEFAULT_MODEL
-                    kwargs = {}
-                    for key in ("temperature", "max_tokens", "top_p"):
-                        val = row.get(key)
-                        if pd.notna(val) and val != "":
-                            kwargs[key] = val
-                    context = build_json_ld_context(row)
-                    result = generate_prompt_for_row(
-                        row,
-                        context,
-                        model,
-                        kwargs.get("temperature", DEFAULT_TEMPERATURE),
-                        kwargs.get("max_tokens"),
-                        kwargs.get("top_p"),
-                        int(row.get("timeout", DEFAULT_TIMEOUT) or DEFAULT_TIMEOUT),
-                    )
-                    if result:
-                        try:
-                            json_obj = json.loads(result)
-                            df.at[idx, "json_ld"] = json.dumps(
-                                json_obj, ensure_ascii=False
-                            )
-                            st.toast(
-                                f"JSON-LD generated for row {row.get('id', idx)}"
-                            )
-                        except json.JSONDecodeError:
-                            st.toast(
-                                f"Invalid JSON-LD for row {row.get('id', idx)}",
-                                icon="⚠️",
-                            )
-                except Exception as e:
-                    message = (
-                        f"JSON-LD generation failed for row {row.get('id', idx)}: {e}"
-                    )
-                    logger.exception(message)
-                    st.error(message)
-            else:
+            existing_alt = row.get("alt_text")
+            if pd.notna(existing_alt) and str(existing_alt).strip() != "":
                 st.toast(
-                    f"Row {row.get('id', idx)} already has json_ld",
+                    f"Row {row.get('id', idx)} already has alt_text",
                     icon="⚠️",
                 )
+                return
+            try:
+                model = row.get("llm_model") or DEFAULT_MODEL
+                kwargs = {}
+                for key in ("temperature", "max_tokens", "top_p"):
+                    val = row.get(key)
+                    if pd.notna(val) and val != "":
+                        kwargs[key] = val
+                context = build_json_ld_context(row)
+                result = generate_prompt_for_row(
+                    row,
+                    context,
+                    model,
+                    kwargs.get("temperature", DEFAULT_TEMPERATURE),
+                    kwargs.get("max_tokens"),
+                    kwargs.get("top_p"),
+                    int(row.get("timeout", DEFAULT_TIMEOUT) or DEFAULT_TIMEOUT),
+                )
+                if result:
+                    try:
+                        parsed = json.loads(result)
+                    except json.JSONDecodeError:
+                        st.toast(
+                            f"Invalid JSON for row {row.get('id', idx)}",
+                            icon="⚠️",
+                        )
+                        return
+                    json_ld_obj = parsed.get("json_ld")
+                    alt_text = parsed.get("alt_text")
+                    if json_ld_obj is not None:
+                        if isinstance(json_ld_obj, (dict, list)):
+                            df.at[idx, "json_ld"] = json.dumps(
+                                json_ld_obj, ensure_ascii=False
+                            )
+                        else:
+                            df.at[idx, "json_ld"] = str(json_ld_obj)
+                    if alt_text:
+                        df.at[idx, "alt_text"] = str(alt_text)
+                    st.toast(
+                        f"JSON-LD and alt text generated for row {row.get('id', idx)}"
+                    )
+            except Exception as e:
+                message = (
+                    f"JSON-LD generation failed for row {row.get('id', idx)}: {e}"
+                )
+                logger.exception(message)
+                st.error(message)
 
         iterate_selected(df, process)
         st.session_state.image_df = df
