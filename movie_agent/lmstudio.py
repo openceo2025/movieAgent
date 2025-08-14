@@ -79,10 +79,8 @@ def translate_with_lmstudio(
     """
 
     url = f"{_base_url()}/v1/chat/completions"
-    prompt = (
-        "翻訳ツールのように回答してくれ。余計な説明などはなく訳だけを答えてくれ。"
-        f"この言葉「{text}」を言語「{lang}に記載されている文字列」に翻訳してくれ"
-    )
+    prompt = f"翻訳ツールのように回答してくれ。余計な説明などはなく訳だけを答えてくれ。この言葉「{text}」を言語「{lang}」に翻訳してくれ"
+
     if log_prompt:
         logger.info(prompt)
     payload: dict[str, object] = {
