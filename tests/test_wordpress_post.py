@@ -41,6 +41,7 @@ def test_post_to_wordpress(monkeypatch, tmp_path):
             "image_path": str(tmp_path),
             "wordpress_site": "mysite",
             "wordpress_account": "myacct",
+            "alt_text": "my alt",
         }
     )
     result = post_to_wordpress(row)
@@ -62,6 +63,8 @@ def test_post_to_wordpress(monkeypatch, tmp_path):
     assert payload["content"] == "cute, funny"
     # Media should list images in sorted order
     assert [m["filename"] for m in payload["media"]] == ["a.png", "b.png"]
+    # Alt text should be forwarded for each media item
+    assert all(m["alt"] == "my alt" for m in payload["media"])
     # Site should be forwarded in payload
     assert payload["site"] == "mysite"
     assert payload["account"] == "myacct"
@@ -101,6 +104,7 @@ def test_post_to_wordpress_payload_has_site(monkeypatch, tmp_path):
             "image_path": str(tmp_path),
             "wordpress_site": "mysite",
             "wordpress_account": "myacct",
+            "alt_text": "my alt",
         }
     )
 
@@ -141,6 +145,7 @@ def test_post_to_wordpress_records_site_and_id(monkeypatch, tmp_path):
                 "image_path": str(tmp_path),
                 "wordpress_site": "mysite",
                 "wordpress_account": "myacct",
+                "alt_text": "my alt",
             }
         ]
     )
@@ -180,6 +185,7 @@ def test_post_to_wordpress_http_error(monkeypatch, tmp_path):
             "image_path": str(tmp_path),
             "wordpress_site": "mysite",
             "wordpress_account": "myacct",
+            "alt_text": "my alt",
         }
     )
     assert post_to_wordpress(row) is None
@@ -214,6 +220,7 @@ def test_post_to_wordpress_bad_status(monkeypatch, tmp_path):
             "image_path": str(tmp_path),
             "wordpress_site": "mysite",
             "wordpress_account": "myacct",
+            "alt_text": "my alt",
         }
     )
     assert post_to_wordpress(row) is None
@@ -248,6 +255,7 @@ def test_post_to_wordpress_no_url(monkeypatch, tmp_path):
             "image_path": str(tmp_path),
             "wordpress_site": "mysite",
             "wordpress_account": "myacct",
+            "alt_text": "my alt",
         }
     )
     assert post_to_wordpress(row) is None
@@ -271,6 +279,7 @@ def test_post_to_wordpress_missing_site(monkeypatch, tmp_path):
         "tags": "cute",
         "image_path": str(tmp_path),
         "wordpress_account": "myacct",
+        "alt_text": "my alt",
     })
     assert post_to_wordpress(row) is None
     assert errors and "WordPressサイトが指定されていません" in errors[0]
@@ -294,6 +303,7 @@ def test_post_to_wordpress_missing_account(monkeypatch, tmp_path):
             "tags": "cute",
             "image_path": str(tmp_path),
             "wordpress_site": "mysite",
+            "alt_text": "my alt",
         }
     )
     assert post_to_wordpress(row) is None
@@ -319,6 +329,7 @@ def test_post_to_wordpress_empty_account(monkeypatch, tmp_path):
             "image_path": str(tmp_path),
             "wordpress_site": "mysite",
             "wordpress_account": "",
+            "alt_text": "my alt",
         }
     )
     assert post_to_wordpress(row) is None

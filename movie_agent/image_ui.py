@@ -120,11 +120,12 @@ def post_to_wordpress(row: pd.Series) -> Optional[Dict[str, Any]]:
         return None
 
     media = []
+    alt_text = row.get("alt_text", "")
     for p in sorted(image_dir.glob("*")):
         if p.is_file():
             with open(p, "rb") as f:
                 encoded = base64.b64encode(f.read()).decode("utf-8")
-            media.append({"filename": p.name, "data": encoded})
+            media.append({"filename": p.name, "data": encoded, "alt": alt_text})
 
     account = row.get("wordpress_account")
     if account is None or str(account).strip() == "":
@@ -256,6 +257,7 @@ def main() -> None:
                 "LLM Environment", options=["Ollama", "LMStudio"]
             ),
             "image_prompt": st.column_config.TextColumn("Image Prompt"),
+            "alt_text": st.column_config.TextColumn("Alt Text"),
             "negative_prompt": st.column_config.TextColumn("Negative Prompt"),
             "sfw_negative_prompt": st.column_config.TextColumn("SFW Negative Prompt"),
             "image_path": st.column_config.LinkColumn("Image Path"),
