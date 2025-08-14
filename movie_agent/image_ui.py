@@ -32,7 +32,7 @@ from movie_agent.csv_manager import (
     DEFAULT_SEED,
     DEFAULT_TEMPERATURE,
 )
-from movie_agent.row_utils import iterate_selected
+from movie_agent.row_utils import iterate_selected, batch_request_selected
 from movie_agent.logger import logger
 from movie_agent.lmstudio import translate_with_lmstudio
 
@@ -414,6 +414,53 @@ def main() -> None:
 
     if json_col.button("Generate JSON-LD"):
         df = st.session_state.image_df.copy()
+        cache: Dict[str, Any] = st.session_state.setdefault("json_ld_cache", {})
+
+        mask = (
+            df["selected"].fillna(False).astype(bool)
+            & df["alt_text"].fillna("").astype(str).str.strip().eq("")
+        )
+        df_to_generate = df[mask].copy()
+
+        def prompt_builder(row: pd.Series) -> str:
+            return build_json_ld_context(row)
+
+        def request_fn(prompts: list[str]) -> list[Any]:
+            if not prompts:
+                return []
+            first_row = df_to_generate.iloc[0]
+            model = first_row.get("llm_model") or DEFAULT_MODEL
+            kwargs: Dict[str, Any] = {}
+            for key in ("temperature", "max_tokens", "top_p"):
+                val = first_row.get(key)
+                if pd.notna(val) and val != "":
+                    kwargs[key] = val
+            timeout = int(first_row.get("timeout", DEFAULT_TIMEOUT) or DEFAULT_TIMEOUT)
+            combined = (
+                "For each of the following entries, return a JSON object with keys 'json_ld' and 'alt_text'. "
+                "Output a JSON array in the same order.\n"
+            )
+            for i, ctx in enumerate(prompts, 1):
+                combined += f"Entry {i}:\n{ctx}\n"
+            result = generate_prompt_for_row(
+                first_row,
+                combined,
+                model,
+                kwargs.get("temperature", DEFAULT_TEMPERATURE),
+                kwargs.get("max_tokens"),
+                kwargs.get("top_p"),
+                timeout,
+            )
+            if result:
+                try:
+                    parsed = json.loads(result)
+                    if isinstance(parsed, list) and len(parsed) == len(prompts):
+                        return parsed
+                except json.JSONDecodeError:
+                    pass
+            return [{} for _ in prompts]
+
+        batch_request_selected(df_to_generate, prompt_builder, request_fn, cache)
 
         def process(idx: int, row: pd.Series) -> None:
             existing_alt = row.get("alt_text")
@@ -423,52 +470,28 @@ def main() -> None:
                     icon="⚠️",
                 )
                 return
-            try:
-                model = row.get("llm_model") or DEFAULT_MODEL
-                kwargs = {}
-                for key in ("temperature", "max_tokens", "top_p"):
-                    val = row.get(key)
-                    if pd.notna(val) and val != "":
-                        kwargs[key] = val
-                context = build_json_ld_context(row)
-                result = generate_prompt_for_row(
-                    row,
-                    context,
-                    model,
-                    kwargs.get("temperature", DEFAULT_TEMPERATURE),
-                    kwargs.get("max_tokens"),
-                    kwargs.get("top_p"),
-                    int(row.get("timeout", DEFAULT_TIMEOUT) or DEFAULT_TIMEOUT),
+            context = build_json_ld_context(row)
+            parsed = cache.get(context)
+            if not parsed:
+                st.toast(
+                    f"No cached result for row {row.get('id', idx)}",
+                    icon="⚠️",
                 )
-                if result:
-                    try:
-                        parsed = json.loads(result)
-                    except json.JSONDecodeError:
-                        st.toast(
-                            f"Invalid JSON for row {row.get('id', idx)}",
-                            icon="⚠️",
-                        )
-                        return
-                    json_ld_obj = parsed.get("json_ld")
-                    alt_text = parsed.get("alt_text")
-                    if json_ld_obj is not None:
-                        if isinstance(json_ld_obj, (dict, list)):
-                            df.at[idx, "json_ld"] = json.dumps(
-                                json_ld_obj, ensure_ascii=False
-                            )
-                        else:
-                            df.at[idx, "json_ld"] = str(json_ld_obj)
-                    if alt_text:
-                        df.at[idx, "alt_text"] = str(alt_text)
-                    st.toast(
-                        f"JSON-LD and alt text generated for row {row.get('id', idx)}"
+                return
+            json_ld_obj = parsed.get("json_ld")
+            alt_text = parsed.get("alt_text")
+            if json_ld_obj is not None:
+                if isinstance(json_ld_obj, (dict, list)):
+                    df.at[idx, "json_ld"] = json.dumps(
+                        json_ld_obj, ensure_ascii=False
                     )
-            except Exception as e:
-                message = (
-                    f"JSON-LD generation failed for row {row.get('id', idx)}: {e}"
-                )
-                logger.exception(message)
-                st.error(message)
+                else:
+                    df.at[idx, "json_ld"] = str(json_ld_obj)
+            if alt_text:
+                df.at[idx, "alt_text"] = str(alt_text)
+            st.toast(
+                f"JSON-LD and alt text generated for row {row.get('id', idx)}",
+            )
 
         iterate_selected(df, process)
         st.session_state.image_df = df
