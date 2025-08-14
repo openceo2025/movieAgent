@@ -77,12 +77,20 @@ def log_to_console(data: dict) -> None:
 
 def main() -> None:
     """Run the Streamlit GUI."""
+    tag_path = BASE_DIR / "tag.json"
+    tags: list[str] = []
+    if tag_path.exists():
+        with tag_path.open(encoding="utf-8") as f:
+            data = json.load(f)
+            tags = data.get("tags", []) if isinstance(data, dict) else data
+
     # Display notice if the page was refreshed by st.rerun()
     msg = st.session_state.pop("just_rerun", None)
     if msg:
         st.info(msg)
 
     st.title("Streamlit Video Agent")
+    st.caption(", ".join(tags))
 
     if "video_df" not in st.session_state:
         st.session_state.video_df = load_data(CSV_FILE)
