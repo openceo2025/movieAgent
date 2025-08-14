@@ -96,6 +96,18 @@ def build_image_prompt_context(row: pd.Series) -> str:
     return synopsis
 
 
+def build_json_ld_context(row: pd.Series) -> str:
+    """Build the context string for JSON-LD generation."""
+    title = row.get("slug") or row.get("id") or ""
+    description = row.get("excerpt") or row.get("image_prompt") or ""
+    return (
+        "Create a JSON-LD object for an image post.\n"
+        f"Title: {title}\n"
+        f"Description: {description}\n"
+        "Return only the JSON object without explanation."
+    )
+
+
 def post_to_wordpress(row: pd.Series) -> Optional[Dict[str, Any]]:
     """Post image metadata and files to a WordPress server.
 
@@ -143,6 +155,13 @@ def post_to_wordpress(row: pd.Series) -> Optional[Dict[str, Any]]:
         "categories": [row["category"]],
         "tags": tags_list,
     }
+
+    json_ld_raw = row.get("json_ld", "")
+    if json_ld_raw:
+        try:
+            payload["json_ld"] = json.loads(json_ld_raw)
+        except json.JSONDecodeError:
+            payload["json_ld"] = json_ld_raw
 
     api_url = WORDPRESS_API_URL
     payload["site"] = site  # site key (not a full URL)
@@ -262,6 +281,7 @@ def main() -> None:
             "alt_text": st.column_config.TextColumn("Alt Text"),
             "slug": st.column_config.TextColumn("Slug"),
             "excerpt": st.column_config.TextColumn("Excerpt"),
+            "json_ld": st.column_config.TextColumn("JSON-LD"),
             "negative_prompt": st.column_config.TextColumn("Negative Prompt"),
             "sfw_negative_prompt": st.column_config.TextColumn("SFW Negative Prompt"),
             "image_path": st.column_config.LinkColumn("Image Path"),
@@ -299,7 +319,7 @@ def main() -> None:
         save_data(edited_df, CSV_FILE)
         st.session_state.last_saved_df = edited_df.copy()
 
-    tag_col, prompt_col, gen_col, post_col, anal_col = st.columns(5)
+    tag_col, prompt_col, json_col, gen_col, post_col, anal_col = st.columns(6)
 
     if tag_col.button("Generate tag"):
         tag_list = load_tag_json()
@@ -383,6 +403,61 @@ def main() -> None:
         if st.session_state.autosave:
             save_data(df, CSV_FILE)
         rerun_with_message("Page reloaded after generating prompts")
+
+
+    if json_col.button("Generate JSON-LD"):
+        df = st.session_state.image_df.copy()
+
+        def process(idx: int, row: pd.Series) -> None:
+            if not row.get("json_ld"):
+                try:
+                    model = row.get("llm_model") or DEFAULT_MODEL
+                    kwargs = {}
+                    for key in ("temperature", "max_tokens", "top_p"):
+                        val = row.get(key)
+                        if pd.notna(val) and val != "":
+                            kwargs[key] = val
+                    context = build_json_ld_context(row)
+                    result = generate_prompt_for_row(
+                        row,
+                        context,
+                        model,
+                        kwargs.get("temperature", DEFAULT_TEMPERATURE),
+                        kwargs.get("max_tokens"),
+                        kwargs.get("top_p"),
+                        int(row.get("timeout", DEFAULT_TIMEOUT) or DEFAULT_TIMEOUT),
+                    )
+                    if result:
+                        try:
+                            json_obj = json.loads(result)
+                            df.at[idx, "json_ld"] = json.dumps(
+                                json_obj, ensure_ascii=False
+                            )
+                            st.toast(
+                                f"JSON-LD generated for row {row.get('id', idx)}"
+                            )
+                        except json.JSONDecodeError:
+                            st.toast(
+                                f"Invalid JSON-LD for row {row.get('id', idx)}",
+                                icon="⚠️",
+                            )
+                except Exception as e:
+                    message = (
+                        f"JSON-LD generation failed for row {row.get('id', idx)}: {e}"
+                    )
+                    logger.exception(message)
+                    st.error(message)
+            else:
+                st.toast(
+                    f"Row {row.get('id', idx)} already has json_ld",
+                    icon="⚠️",
+                )
+
+        iterate_selected(df, process)
+        st.session_state.image_df = df
+        if st.session_state.autosave:
+            save_data(df, CSV_FILE)
+        rerun_with_message("Page reloaded after generating JSON-LD")
 
 
     if gen_col.button("Generate images"):
