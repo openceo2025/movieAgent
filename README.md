@@ -202,3 +202,7 @@ Set endpoints so the UI can reach local services:
 
 When `llm_environment` is `LMStudio`, requests target `LMSTUDIO_HOST` instead of the Ollama API; all other behavior remains the same.
 
+## 今後の課題
+
+- WordPress 投稿時の JSON-LD が正しく設定されておらず、ページに構造化データとして認識されていない。`<script type="application/ld+json">` 形式での挿入処理を実装する必要がある。
+
