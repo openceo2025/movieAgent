@@ -44,6 +44,7 @@ def test_post_to_wordpress(monkeypatch, tmp_path):
             "alt_text": "my alt",
             "slug": "my-slug",
             "excerpt": "short excerpt",
+            "json_ld": '{"@context":"https://schema.org","@type":"ImageObject"}',
         }
     )
     result = post_to_wordpress(row)
@@ -66,6 +67,7 @@ def test_post_to_wordpress(monkeypatch, tmp_path):
     # Slug and excerpt should be forwarded
     assert payload["slug"] == "my-slug"
     assert payload["excerpt"] == "short excerpt"
+    assert payload["json_ld"] == {"@context": "https://schema.org", "@type": "ImageObject"}
     # Media should list images in sorted order
     assert [m["filename"] for m in payload["media"]] == ["a.png", "b.png"]
     # Alt text should be forwarded for each media item
