@@ -96,6 +96,10 @@ def test_load_image_data_adds_post_columns(tmp_path):
     assert df["llm_environment"].eq(IMAGE_DEFAULTS["llm_environment"]).all()
     assert "alt_text" in df.columns
     assert df["alt_text"].eq("").all()
+    assert "slug" in df.columns
+    assert df["slug"].eq("").all()
+    assert "excerpt" in df.columns
+    assert df["excerpt"].eq("").all()
 
 
 def test_load_image_data_sanitizes_strings(tmp_path):
