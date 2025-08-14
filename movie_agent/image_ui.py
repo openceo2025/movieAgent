@@ -51,6 +51,13 @@ WORDPRESS_API_URL = os.getenv(
 )
 DEFAULT_TIMEOUT = 300
 DEFAULT_BATCH = 1
+TAG_FILE = BASE_DIR / "tag.json"
+
+try:
+    with TAG_FILE.open("r", encoding="utf-8") as f:
+        tags = json.load(f).get("tags", [])
+except (FileNotFoundError, json.JSONDecodeError):
+    tags = []
 
 st.set_page_config(page_title="Image Agent", layout="wide")
 
@@ -193,6 +200,7 @@ def main() -> None:
         st.info(msg)
 
     st.title("Image Generation Agent")
+    st.caption(", ".join(tags))
 
     if "image_df" not in st.session_state:
         st.session_state.image_df = load_image_data(CSV_FILE)
