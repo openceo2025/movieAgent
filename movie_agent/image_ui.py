@@ -309,10 +309,9 @@ def main() -> None:
             error = False
             for i, (idx, row) in enumerate(selected_rows):
                 tag = tag_list[i % len(tag_list)]
-                lang = str(row.get("id") or "").strip()
                 result = translate_with_lmstudio(
                     tag,
-                    lang,
+                    str(row.get("id") or "").strip(),
                     log_prompt=(i == 0),
                 )
                 if result is None:
