@@ -235,7 +235,10 @@ def main() -> None:
     """Run the Streamlit UI for image generation and posting."""
     msg = st.session_state.pop("just_rerun", None)
     if msg:
-        st.info(msg)
+        if msg.startswith("Run All completed"):
+            st.success(msg)
+        else:
+            st.info(msg)
 
     st.title("Image Generation Agent")
     st.caption(", ".join(tags))
@@ -337,6 +340,8 @@ def main() -> None:
 
     if all_trigger:
         st.session_state["multi_step"] = "tag"
+        st.session_state["run_all_start"] = datetime.now()
+        logger.info("Run All started")
 
     tag_trigger = tag_trigger or st.session_state.get("multi_step") == "tag"
     prompt_trigger = prompt_trigger or st.session_state.get("multi_step") == "prompt"
@@ -638,7 +643,20 @@ def main() -> None:
             save_data(df, CSV_FILE)
         if st.session_state.get("multi_step") == "post":
             st.session_state.pop("multi_step", None)
-        rerun_with_message("Page reloaded after posting")
+            start = st.session_state.pop("run_all_start", None)
+            if start:
+                elapsed = datetime.now() - start
+                total_seconds = int(elapsed.total_seconds())
+                h, rem = divmod(total_seconds, 3600)
+                m, s = divmod(rem, 60)
+                hms = f"{h}h {m}m {s}s"
+                message = f"Run All completed in {hms}"
+                logger.info(message)
+                rerun_with_message(message)
+            else:
+                rerun_with_message("Page reloaded after posting")
+        else:
+            rerun_with_message("Page reloaded after posting")
 
     if analysis_trigger:
         df = st.session_state.image_df
