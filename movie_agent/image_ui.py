@@ -55,7 +55,7 @@ DEFAULT_BATCH = 1
 TAG_FILE = BASE_DIR / "tag.json"
 
 
-def load_tags() -> list[str]:
+def load_tag_json() -> list[str]:
     """Load tags array from ``tag.json``.
 
     Returns an empty list if the file is missing or invalid.
@@ -69,7 +69,7 @@ def load_tags() -> list[str]:
         return []
 
 
-tags = load_tags()
+tags = load_tag_json()
 
 st.set_page_config(page_title="Image Agent", layout="wide")
 
@@ -296,41 +296,34 @@ def main() -> None:
     tag_col, prompt_col, gen_col, post_col, anal_col = st.columns(5)
 
     if tag_col.button("Generate tag"):
-        tag_list = load_tags()
+        tag_list = load_tag_json()
         if not tag_list:
             st.error("tag.json からタグを読み込めませんでした")
         else:
             df = st.session_state.image_df.copy()
-            idx_counter = 0
-            error = False
+            selected_rows: list[tuple[int, pd.Series]] = []
+            if "selected" in df.columns:
+                mask = df["selected"].fillna(False).astype(bool)
+                selected_rows = list(df[mask].iterrows())
 
-            def process(idx: int, row: pd.Series) -> None:
-                nonlocal idx_counter, error
-                if error:
-                    return
-                if idx_counter >= len(tag_list):
-                    df.at[idx, "tags"] = ""
-                    idx_counter += 1
-                    return
+            error = False
+            for i, (idx, row) in enumerate(selected_rows):
+                tag = tag_list[i % len(tag_list)]
                 lang = str(row.get("id") or "").strip()
-                tag = tag_list[idx_counter]
                 result = translate_with_lmstudio(
                     tag,
                     lang,
-                    log_prompt=(idx_counter == 0),
+                    log_prompt=(i == 0),
                 )
                 if result is None:
                     st.error("タグの翻訳に失敗しました")
                     error = True
-                    return
+                    break
                 df.at[idx, "tags"] = result
-                idx_counter += 1
 
-            iterate_selected(df, process)
             if not error:
                 st.session_state.image_df = df
-                if st.session_state.autosave:
-                    save_data(df, CSV_FILE)
+                save_data(df, CSV_FILE)
                 rerun_with_message("Tags generated")
 
 
