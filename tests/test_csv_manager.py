@@ -94,17 +94,25 @@ def test_load_image_data_adds_post_columns(tmp_path):
     assert df["sfw_negative_prompt"].eq("").all()
     assert "llm_environment" in df.columns
     assert df["llm_environment"].eq(IMAGE_DEFAULTS["llm_environment"]).all()
+    assert "alt_text" in df.columns
+    assert df["alt_text"].eq("").all()
 
 
 def test_load_image_data_sanitizes_strings(tmp_path):
     path = tmp_path / "img.csv"
-    pd.DataFrame({"id": ["1"], "checkpoint": [""], "comfy_vae": [pd.NA]}).to_csv(
+    pd.DataFrame({
+        "id": ["1"],
+        "checkpoint": [""],
+        "comfy_vae": [pd.NA],
+        "alt_text": [pd.NA],
+    }).to_csv(
         path, index=False
     )
     df = load_image_data(path)
     assert df.loc[0, "checkpoint"] == ""
     assert df.loc[0, "comfy_vae"] == ""
     assert df.loc[0, "comfy_lora"] == ""
+    assert df.loc[0, "alt_text"] == ""
 
 
 def test_load_image_data_ignores_blank_rows(tmp_path):

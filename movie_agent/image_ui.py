@@ -387,6 +387,7 @@ def main() -> None:
             if not prompt:
                 st.warning(f"No image_prompt for row {row.get('id', idx)}")
                 return
+            alt_text = slugify(prompt)
             neg_prompt = row.get("negative_prompt", "") or DEFAULT_NEGATIVE_PROMPT
             sfw_neg = row.get("sfw_negative_prompt", "")
             if row.get("nsfw"):
@@ -446,7 +447,7 @@ def main() -> None:
                         cfg=cfg_val,
                         steps=steps_val,
                         output_dir=folder,
-                        prefix=f"batch{b}",
+                        prefix=f"{alt_text}_{b}",
                         debug=DEBUG_MODE,
                     )
                     if paths:
@@ -464,6 +465,7 @@ def main() -> None:
                     st.error(message)
 
             df.at[idx, "image_path"] = str(folder.resolve())
+            df.at[idx, "alt_text"] = alt_text
 
         iterate_selected(df, process)
         st.session_state.image_df = df
