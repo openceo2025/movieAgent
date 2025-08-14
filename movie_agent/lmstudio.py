@@ -37,12 +37,28 @@ def list_lmstudio_models(timeout: int | None = 30) -> list[str]:
 def generate_story_prompt_lmstudio(
     context: str,
     model: str,
-    temperature: float = 0.8,
+    temperature: float = 0.0,
     max_tokens: int | None = None,
     top_p: float | None = None,
     timeout: int = 300,
 ) -> str | None:
-    """Generate text using LM Studio's chat completions API."""
+    """Generate text using LM Studio's chat completions API.
+
+    Parameters
+    ----------
+    context : str
+        Combined context or instructions for the model.
+    model : str
+        LM Studio model name to use.
+    temperature : float, default 0.0
+        Sampling temperature for the generation.
+    max_tokens : int | None, optional
+        Maximum tokens to generate.
+    top_p : float | None, optional
+        Nucleus sampling parameter.
+    timeout : int, default 300
+        Request timeout in seconds.
+    """
 
     url = f"{_base_url()}/v1/chat/completions"
     payload: dict[str, object] = {

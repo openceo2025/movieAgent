@@ -2,7 +2,7 @@ from .comfyui import DEFAULT_CFG, DEFAULT_STEPS
 
 # Default generation parameters used when initializing a new CSV
 DEFAULT_MODEL = "gpt-oss:20b"
-DEFAULT_TEMPERATURE = 0.8
+DEFAULT_TEMPERATURE = 0.0
 DEFAULT_MAX_TOKENS = 4096
 DEFAULT_TOP_P = 0.95
 DEFAULT_SEED = 31337

@@ -49,7 +49,7 @@ def list_ollama_models(debug: bool | None = None) -> list[str]:
 def generate_story_prompt(
     context: str,
     model: str,
-    temperature: float = 0.8,
+    temperature: float = 0.0,
     max_tokens: int | None = None,
     top_p: float | None = None,
     debug: bool | None = None,
@@ -64,7 +64,7 @@ def generate_story_prompt(
         base prompt, NSFW flag).
     model : str
         Ollama model name to use.
-    temperature : float, default 0.8
+    temperature : float, default 0.0
         Sampling temperature passed to Ollama.
     max_tokens : int | None, optional
         Maximum tokens to generate.

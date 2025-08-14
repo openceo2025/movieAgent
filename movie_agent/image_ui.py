@@ -30,7 +30,6 @@ from movie_agent.csv_manager import (
     DEFAULT_WIDTH,
     DEFAULT_HEIGHT,
     DEFAULT_SEED,
-    DEFAULT_TEMPERATURE,
 )
 from movie_agent.row_utils import iterate_selected, batch_request_selected
 from movie_agent.logger import logger
@@ -372,7 +371,7 @@ def main() -> None:
                         if not model:
                             model = DEFAULT_MODEL
                         kwargs = {}
-                        for key in ("temperature", "max_tokens", "top_p"):
+                        for key in ("max_tokens", "top_p"):
                             val = row.get(key)
                             if pd.notna(val) and val != "":
                                 kwargs[key] = val
@@ -381,7 +380,7 @@ def main() -> None:
                             row,
                             synopsis,
                             model,
-                            kwargs.get("temperature", DEFAULT_TEMPERATURE),
+                            0.8,
                             kwargs.get("max_tokens"),
                             kwargs.get("top_p"),
                             int(row.get("timeout", DEFAULT_TIMEOUT) or DEFAULT_TIMEOUT),
@@ -431,7 +430,7 @@ def main() -> None:
             first_row = df_to_generate.iloc[0]
             model = first_row.get("llm_model") or DEFAULT_MODEL
             kwargs: Dict[str, Any] = {}
-            for key in ("temperature", "max_tokens", "top_p"):
+            for key in ("max_tokens", "top_p"):
                 val = first_row.get(key)
                 if pd.notna(val) and val != "":
                     kwargs[key] = val
@@ -446,7 +445,7 @@ def main() -> None:
                 first_row,
                 combined,
                 model,
-                kwargs.get("temperature", DEFAULT_TEMPERATURE),
+                0.0,
                 kwargs.get("max_tokens"),
                 kwargs.get("top_p"),
                 timeout,
